@@ -182,3 +182,28 @@ it('never serialises password hashes into the users page', function (): void {
 
     expect($json)->not->toContain('legacy_password_md5')->not->toContain('$2y$')->not->toContain('argon2id');
 });
+
+it('reactivates a deactivated user and restores login', function (): void {
+    [$owner, $tenant, $branch] = adminActor();
+    $this->actingAs($owner)->post('/app/settings/users', userPayload($tenant, $branch));
+    $user = User::query()->where('email', 'rina@shop.test')->firstOrFail();
+
+    $this->post("/app/settings/users/{$user->id}/deactivate")->assertRedirect();
+    expect($user->refresh()->is_active)->toBeFalse();
+
+    $this->post("/app/settings/users/{$user->id}/reactivate")->assertRedirect();
+    expect($user->refresh()->is_active)->toBeTrue();
+
+    $this->post('/logout');
+    $this->post('/login', ['login' => 'rina@shop.test', 'password' => 'a-strong-pass-1'])->assertRedirect();
+    $this->assertAuthenticated();
+});
+
+it('refuses to reactivate an active user or a foreign user', function (): void {
+    [$owner, $tenant, $branch] = adminActor();
+    [$foreign] = adminActor();
+
+    $this->actingAs($owner);
+    $this->post("/app/settings/users/{$owner->id}/reactivate")->assertSessionHasErrors('form');
+    $this->post("/app/settings/users/{$foreign->id}/reactivate")->assertNotFound();
+});

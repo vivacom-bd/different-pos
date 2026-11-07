@@ -70,7 +70,19 @@ final readonly class SaveRole
 
             $isOwner = $role->name === SystemRoles::OWNER;
             if ($permissions !== null && (! $system || ! $isOwner)) {
-                $role->syncPermissions($permissions);
+                $current = $role->permissions->pluck('name')->map(strval(...))->all();
+                $incoming = array_values($permissions);
+                $changedSensitive = array_values(array_intersect(array_values(array_unique(array_merge(
+                    array_diff($incoming, $current), array_diff($current, $incoming),
+                ))), Permission::SENSITIVE));
+
+                if ($changedSensitive !== [] && ! $actor->hasRole(SystemRoles::OWNER)) {
+                    throw InvalidAdminData::invalid('Only an Owner can change these permissions: '.implode(', ', $changedSensitive).'.');
+                }
+                if (in_array('users.manage', $current, true) && ! in_array('users.manage', $incoming, true) && ! $this->anotherActiveUsersManageHolderExists($role)) {
+                    throw InvalidAdminData::invalid('The business needs at least one active user with users.manage.');
+                }
+                $role->syncPermissions($incoming);
             }
             app(PermissionRegistrar::class)->forgetCachedPermissions();
 
@@ -95,5 +107,13 @@ final readonly class SaveRole
         if ($exists) {
             throw InvalidAdminData::duplicate('role', $name);
         }
+    }
+
+    private function anotherActiveUsersManageHolderExists(Role $role): bool
+    {
+        return User::query()->inCurrentTenant()->where('is_active', true)
+            ->whereHas('roles', fn ($q) => $q->where('roles.id', '!=', $role->id))
+            ->whereHas('roles.permissions', fn ($q) => $q->where('name', 'users.manage'))
+            ->exists();
     }
 }

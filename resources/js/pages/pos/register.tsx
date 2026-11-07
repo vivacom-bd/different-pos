@@ -179,6 +179,18 @@ export default function Register(props: Props) {
         ...emptyCart(),
         customer: props.customer,
     }));
+
+    // If the branch changes without a remount (switch lands back on /app/pos),
+    // re-init register and cart for the new branch instead of selling into the old one.
+    const branchIdRef = useRef(props.branch.id);
+    useEffect(() => {
+        if (branchIdRef.current === props.branch.id) {
+            return;
+        }
+        branchIdRef.current = props.branch.id;
+        setRegisterId(initialRegister(props.branch.id, props.registers));
+        dispatch({ type: 'clear' });
+    }, [props.branch.id, props.registers]);
     const totals = useMemo(() => cartTotals(cart, settings), [cart, settings]);
     const total = totals.order.grand_total;
 

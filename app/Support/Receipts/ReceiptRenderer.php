@@ -51,6 +51,6 @@ final class ReceiptRenderer
 
     public static function paper(?string $paper): string
     {
-        return in_array($paper, self::PAPERS, true) ? $paper : '80';
+        return in_array($paper, self::PAPERS, true) ? $paper : 'a4';
     }
 }

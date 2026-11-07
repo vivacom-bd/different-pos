@@ -5,6 +5,7 @@ declare(strict_types=1);
 require_once __DIR__.'/../Admin/AdminHelpers.php';
 
 use App\Support\Permissions\SystemRoles;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -160,4 +161,16 @@ it('permissions:sync repairs an Owner that lacks an existing permission (a crash
         ->and($cashier->refresh()->hasPermissionTo('branches.switch'))->toBe($cashierHad);
 
     $this->artisan('permissions:sync')->expectsOutput('Permissions already in sync.')->assertSuccessful();
+});
+
+it('switching clears the new branch ticker cache so day numbers are fresh', function (): void {
+    [$user, $tenant] = adminActor();
+    $second = addBranch($tenant);
+    $user->branches()->attach($second);
+    $today = now()->format('Y-m-d');
+    Cache::put("today-ticker:{$tenant->id}:{$second->id}:{$today}", ['total_paisa' => 999_000, 'sales' => 99], 60);
+
+    $this->actingAs($user)->post("/app/branch/{$second->id}/switch")->assertRedirect('/app');
+
+    expect(Cache::get("today-ticker:{$tenant->id}:{$second->id}:{$today}"))->toBeNull();
 });

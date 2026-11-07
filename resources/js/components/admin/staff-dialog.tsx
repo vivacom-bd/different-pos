@@ -17,7 +17,12 @@ import { Spinner } from '@/components/ui/spinner';
 import { useHotkeys } from '@/hotkeys/use-hotkeys';
 import { useT } from '@/i18n';
 
-export type StaffRole = { id: number; name: string; is_system: boolean };
+export type StaffRole = {
+    id: number;
+    name: string;
+    is_system: boolean;
+    permissions?: string[];
+};
 export type StaffBranch = { id: number; name: string; code: string };
 export type StaffForm = {
     id: number;
@@ -47,12 +52,16 @@ export function StaffDialog({
     user,
     roles,
     branches,
+    sensitive_permissions = [],
+    is_owner = true,
     onClose,
 }: {
     /** null = new staff member. */
     user: StaffForm | null;
     roles: StaffRole[];
     branches: StaffBranch[];
+    sensitive_permissions?: string[] | undefined;
+    is_owner?: boolean | undefined;
     onClose: () => void;
 }) {
     const { t } = useT();
@@ -72,8 +81,18 @@ export function StaffDialog({
     });
     const errors = form.errors as Record<string, string | undefined>;
 
+    const sensitive = (role: StaffRole) =>
+        (role.permissions ?? []).some((p) => sensitive_permissions.includes(p));
+    const sensitiveSelected = roles
+        .filter((role) => form.data.role_ids.includes(role.id))
+        .some(sensitive);
+    const sensitiveBlocked = sensitiveSelected && !is_owner;
+
     const submit = (event?: FormEvent) => {
         event?.preventDefault();
+        if (sensitiveBlocked) {
+            return;
+        }
         const options = { preserveScroll: true, onSuccess: onClose };
         if (user) {
             form.put(`/app/settings/users/${user.id}`, options);
@@ -238,25 +257,51 @@ export function StaffDialog({
                                 {t('users.system_roles')} *
                             </legend>
                             <div className="grid gap-x-3 sm:grid-cols-3">
-                                {roles.map((role) => (
-                                    <CheckField
-                                        key={role.id}
-                                        label={role.name}
-                                        checked={form.data.role_ids.includes(
-                                            role.id,
-                                        )}
-                                        onChange={() =>
-                                            form.setData(
-                                                'role_ids',
-                                                toggle(
-                                                    form.data.role_ids,
+                                {roles.map((role) => {
+                                    const ownerOnly = sensitive(role);
+
+                                    return (
+                                        <div
+                                            key={role.id}
+                                            className="flex items-center gap-1"
+                                        >
+                                            <CheckField
+                                                label={role.name}
+                                                checked={form.data.role_ids.includes(
                                                     role.id,
-                                                ),
-                                            )
-                                        }
-                                    />
-                                ))}
+                                                )}
+                                                onChange={() =>
+                                                    form.setData(
+                                                        'role_ids',
+                                                        toggle(
+                                                            form.data.role_ids,
+                                                            role.id,
+                                                        ),
+                                                    )
+                                                }
+                                            />
+                                            {ownerOnly ? (
+                                                <span
+                                                    className="shrink-0 rounded border px-1 py-0.5 text-[9px] font-bold text-muted-foreground"
+                                                    title={t(
+                                                        'users.grant_sensitive_body',
+                                                    )}
+                                                >
+                                                    {t('users.owner_only_role')}
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                    );
+                                })}
                             </div>
+                            {sensitiveBlocked ? (
+                                <p
+                                    role="alert"
+                                    className="rounded-lg bg-danger-soft px-3 py-2 text-xs text-destructive"
+                                >
+                                    {t('users.grant_sensitive_body')}
+                                </p>
+                            ) : null}
                             <p
                                 className={
                                     errors['role_ids']
@@ -346,7 +391,10 @@ export function StaffDialog({
                         >
                             {t('admin.cancel')}
                         </Button>
-                        <Button type="submit" disabled={form.processing}>
+                        <Button
+                            type="submit"
+                            disabled={form.processing || sensitiveBlocked}
+                        >
                             {form.processing ? <Spinner /> : null}
                             {user ? t('admin.save') : t('users.save_staff')}
                         </Button>

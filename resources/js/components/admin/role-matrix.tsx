@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { Check, Plus, Save, Trash2 } from 'lucide-react';
+import { Check, Copy, Lock, Plus, Save, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { RecordDialog } from '@/components/admin/record-dialog';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -18,6 +18,13 @@ export type MatrixRole = {
     max_discount_pct_bp: number;
     permissions: string[];
     users: number;
+};
+
+export type MatrixProps = {
+    permissions: string[];
+    roles: MatrixRole[];
+    sensitive_permissions?: string[] | undefined;
+    is_owner?: boolean | undefined;
 };
 
 type Draft = { permissions: string[]; max_discount_pct_bp: number };
@@ -47,15 +54,15 @@ export function groupPermissions(permissions: string[]): [string, string[]][] {
 /**
  * Mockup "Granular Operational Permissions Matrix": permission rows (plain-language label + code) × role
  * columns with the ✓ / — marks. Each cell is a toggle (Space/Enter); the Owner column is locked on.
- * A role's changes are saved with its own Save button; custom roles can be added and, unused, deleted.
+ * Sensitive cells stay locked for non-Owner admins. A dirty banner offers Save-all; custom roles can be
+ * duplicated, added and, unused, deleted.
  */
 export function RoleMatrix({
     permissions,
     roles,
-}: {
-    permissions: string[];
-    roles: MatrixRole[];
-}) {
+    sensitive_permissions = [],
+    is_owner = true,
+}: MatrixProps) {
     const { t } = useT();
     const digits = useDigits();
     const [drafts, setDrafts] = useState<Record<number, Draft>>({});
@@ -80,6 +87,30 @@ export function RoleMatrix({
     // The Owner always holds every permission.
     const locked = (role: MatrixRole) =>
         role.is_system && role.name === 'Owner';
+    const cellLocked = (role: MatrixRole, permission: string) =>
+        locked(role) ||
+        (!is_owner && sensitive_permissions.includes(permission));
+
+    const dirtyCount = useMemo(
+        () => roles.filter(dirty).length,
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [drafts, roles],
+    );
+    const saveAll = () => roles.filter(dirty).forEach((role) => save(role));
+    const discardDrafts = () => setDrafts({});
+
+    const duplicate = (role: MatrixRole) => {
+        const name = `${role.name} ${t('roles.copy_suffix')}`.slice(0, 60);
+        router.post(
+            '/app/settings/roles',
+            {
+                name,
+                permissions: draftOf(role).permissions,
+                max_discount_pct_bp: draftOf(role).max_discount_pct_bp,
+            },
+            { preserveScroll: true },
+        );
+    };
 
     const toggle = (role: MatrixRole, permission: string) => {
         const current = draftOf(role);
@@ -138,6 +169,39 @@ export function RoleMatrix({
                     {t('roles.new')}
                 </Button>
             </div>
+            {dirtyCount > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 border-b bg-warning-soft px-3 py-2 text-xs">
+                    <span className="font-semibold">
+                        {t('roles.unsaved', { n: digits.n(dirtyCount) })}
+                    </span>
+                    <span className="ml-auto flex gap-2">
+                        <Button
+                            type="button"
+                            size="sm"
+                            className="h-7 px-2 text-[11px]"
+                            onClick={saveAll}
+                        >
+                            <Save aria-hidden="true" />
+                            {t('roles.save_all')}
+                        </Button>
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 px-2 text-[11px]"
+                            onClick={discardDrafts}
+                        >
+                            {t('admin.cancel')}
+                        </Button>
+                    </span>
+                </div>
+            ) : null}
+            {!is_owner ? (
+                <p className="flex items-center gap-1.5 border-b bg-surface-sunken px-3 py-1.5 text-[11px] text-muted-foreground">
+                    <Lock aria-hidden="true" className="size-3" />
+                    {t('roles.owner_only_hint')}
+                </p>
+            ) : null}
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                     <caption className="sr-only">
@@ -213,8 +277,33 @@ export function RoleMatrix({
                                     locked(role) ||
                                     draftOf(role).permissions.includes(name)
                                 }
-                                locked={locked}
+                                cellLocked={cellLocked}
                                 toggle={toggle}
+                                toggleAll={(role, target) => {
+                                    const current = draftOf(role);
+                                    const wanted = target
+                                        ? [
+                                              ...new Set([
+                                                  ...current.permissions,
+                                                  ...names.filter(
+                                                      (n) =>
+                                                          !cellLocked(role, n),
+                                                  ),
+                                              ]),
+                                          ]
+                                        : current.permissions.filter(
+                                              (p) =>
+                                                  !names.includes(p) ||
+                                                  cellLocked(role, p),
+                                          );
+                                    setDrafts({
+                                        ...drafts,
+                                        [role.id]: {
+                                            ...current,
+                                            permissions: wanted,
+                                        },
+                                    });
+                                }}
                             />
                         ))}
                         <tr>
@@ -237,6 +326,18 @@ export function RoleMatrix({
                                             <Save aria-hidden="true" />
                                             {t('admin.save')}
                                         </Button>
+                                        {!role.is_system ? (
+                                            <Button
+                                                type="button"
+                                                size="icon"
+                                                variant="outline"
+                                                className="size-7 [@media(pointer:coarse)]:size-11"
+                                                aria-label={`${t('roles.duplicate')}: ${role.name}`}
+                                                onClick={() => duplicate(role)}
+                                            >
+                                                <Copy aria-hidden="true" />
+                                            </Button>
+                                        ) : null}
                                         {!role.is_system ? (
                                             <Button
                                                 type="button"
@@ -309,15 +410,17 @@ function GroupRows({
     names,
     roles,
     has,
-    locked,
+    cellLocked,
     toggle,
+    toggleAll,
 }: {
     group: string;
     names: string[];
     roles: MatrixRole[];
     has: (role: MatrixRole, permission: string) => boolean;
-    locked: (role: MatrixRole) => boolean;
+    cellLocked: (role: MatrixRole, permission: string) => boolean;
     toggle: (role: MatrixRole, permission: string) => void;
+    toggleAll: (role: MatrixRole, target: boolean) => void;
 }) {
     const { t, locale } = useT();
 
@@ -329,7 +432,33 @@ function GroupRows({
                     colSpan={roles.length + 1}
                     className="px-3 py-1.5 text-left text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
                 >
-                    {t(`roles.group.${group}`)}
+                    <span className="flex items-center gap-2">
+                        {t(`roles.group.${group}`)}
+                        <span className="flex gap-1">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-5 px-1.5 text-[10px]"
+                                onClick={() =>
+                                    roles.forEach((r) => toggleAll(r, true))
+                                }
+                            >
+                                {t('roles.select_all')}
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-5 px-1.5 text-[10px]"
+                                onClick={() =>
+                                    roles.forEach((r) => toggleAll(r, false))
+                                }
+                            >
+                                {t('roles.clear_all')}
+                            </Button>
+                        </span>
+                    </span>
                 </th>
             </tr>
             {names.map((name) => (
@@ -354,13 +483,14 @@ function GroupRows({
                     </th>
                     {roles.map((role) => {
                         const on = has(role, name);
+                        const disabled = cellLocked(role, name);
 
                         return (
                             <td key={role.id} className="px-2 py-1 text-center">
                                 <label
                                     className={cn(
                                         'inline-flex size-8 items-center justify-center rounded-lg transition-colors hover:bg-surface-sunken has-focus-visible:ring-[3px] has-focus-visible:ring-ring/50 [@media(pointer:coarse)]:size-11',
-                                        locked(role)
+                                        disabled
                                             ? 'cursor-not-allowed'
                                             : 'cursor-pointer',
                                     )}
@@ -369,7 +499,7 @@ function GroupRows({
                                         type="checkbox"
                                         className="sr-only"
                                         checked={on}
-                                        disabled={locked(role)}
+                                        disabled={disabled}
                                         aria-label={`${role.name}: ${permissionLabel(t, name)}`}
                                         onChange={() => toggle(role, name)}
                                     />

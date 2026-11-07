@@ -46,7 +46,7 @@ final class Branch extends Model
         'batch_selection' => 'auto', // auto|manual (legacy is_use_stock_invoice)
         'cash_rounding' => 0,        // paisa step; 0 = none
         'auto_print' => true,
-        'paper' => '80',             // 80|58|a4
+        'paper' => 'a4',             // 80|58|a4 — A4 is the default; a branch may pick a roll
     ];
 
     protected $fillable = [

@@ -27,6 +27,10 @@ final readonly class DeactivateUser
                 && ! User::query()->inCurrentTenant()->where('is_active', true)->whereKeyNot($user->id)->role(SystemRoles::OWNER)->exists()) {
                 throw InvalidAdminData::invalid('The business needs at least one active Owner.');
             }
+            if ($user->checkPermissionTo('users.manage')
+                && ! User::query()->inCurrentTenant()->where('is_active', true)->whereKeyNot($user->id)->whereHas('roles.permissions', fn ($q) => $q->where('name', 'users.manage'))->exists()) {
+                throw InvalidAdminData::invalid('The business needs at least one active user with users.manage.');
+            }
 
             $user->forceFill(['is_active' => false, 'remember_token' => null])->save();
             Audit::log('user.deactivated', $user, [], $actor);

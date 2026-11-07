@@ -76,3 +76,17 @@ function roleIdOf($tenant, string $name): int
 {
     return (int) Role::query()->where('tenant_id', $tenant->id)->where('name', $name)->value('id');
 }
+
+it('lets a non-Owner users.manage holder reset only their own PIN, not another staff member', function (): void {
+    [$owner, $tenant, $branch] = adminActor();
+    $role = Role::query()->create(['name' => 'Admin', 'guard_name' => 'web', 'tenant_id' => $tenant->id, 'is_system' => false, 'max_discount_pct_bp' => 0]);
+    $role->givePermissionTo('users.manage');
+    $admin = User::factory()->for($tenant)->create();
+    $admin->branches()->attach($branch);
+    $admin->assignRole($role);
+
+    $this->actingAs($admin)
+        ->post("/app/settings/users/{$owner->id}/pin", ['pin' => '1234'])
+        ->assertForbidden();
+    expect(fn () => app(ResetStaffPin::class)->handle($admin, $owner, '1234'))->toThrow(AuthorizationException::class);
+});

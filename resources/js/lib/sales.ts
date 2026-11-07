@@ -26,7 +26,7 @@ export const salesUrl = {
     void: (id: number) => `/app/sales/${id}/void`,
     payments: (id: number) => `/app/sales/${id}/payments`,
     share: (id: number) => `/app/sales/${id}/share`,
-    receipt: (id: number, paper: Paper = '80') =>
+    receipt: (id: number, paper: Paper = 'a4') =>
         `/app/sales/${id}/receipt?paper=${paper}`,
     chalan: (id: number) => `/app/sales/${id}/chalan`,
     returnsIndex: '/app/returns',
@@ -37,12 +37,12 @@ export const salesUrl = {
             ? `/app/exchanges/create?sale=${saleId}`
             : '/app/exchanges/create',
     returnShow: (id: number) => `/app/returns/${id}`,
-    returnReceipt: (id: number, paper: Paper = '80') =>
+    returnReceipt: (id: number, paper: Paper = 'a4') =>
         `/app/returns/${id}/receipt?paper=${paper}`,
     dues: '/app/dues',
     dueShow: (uuid: string) => `/app/dues/${uuid}`,
     duePayments: (uuid: string) => `/app/dues/${uuid}/payments`,
-    paymentReceipt: (id: number, paper: Paper = '80') =>
+    paymentReceipt: (id: number, paper: Paper = 'a4') =>
         `/app/payments/${id}/receipt?paper=${paper}`,
     customer: (uuid: string) => `/app/customers/${uuid}`,
 };

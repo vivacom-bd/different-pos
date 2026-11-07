@@ -126,3 +126,40 @@ it('404s a role of another tenant', function (): void {
     $this->delete("/app/settings/roles/{$foreign->id}")->assertNotFound();
     expect($foreign->refresh()->max_discount_pct_bp)->toBe(0);
 });
+
+it('blocks a non-Owner from changing sensitive permissions on a role', function (): void {
+    [$owner, $tenant, $branch] = adminActor();
+    $role = Role::query()->create(['name' => 'Admin', 'guard_name' => 'web', 'tenant_id' => $tenant->id, 'is_system' => false, 'max_discount_pct_bp' => 0]);
+    $role->givePermissionTo('users.manage');
+    $admin = User::factory()->for($tenant)->create();
+    $admin->branches()->attach($branch);
+    $admin->assignRole($role);
+
+    $cashier = tenantRole($tenant, SystemRoles::CASHIER);
+
+    $this->actingAs($admin)
+        ->put("/app/settings/roles/{$cashier->id}", ['permissions' => ['dashboard.view', 'backup.run']])
+        ->assertSessionHasErrors('form');
+    expect($cashier->refresh()->permissions->pluck('name')->map(strval(...))->all())->not->toContain('backup.run');
+
+    $this->actingAs($owner)
+        ->put("/app/settings/roles/{$cashier->id}", ['permissions' => ['dashboard.view', 'backup.run']])
+        ->assertSessionHasNoErrors();
+});
+
+it('never removes the last active users.manage holder from a role', function (): void {
+    [$owner, $tenant, $branch] = adminActor();
+    $role = Role::query()->create(['name' => 'Lone Admin', 'guard_name' => 'web', 'tenant_id' => $tenant->id, 'is_system' => false, 'max_discount_pct_bp' => 0]);
+    $role->givePermissionTo('users.manage', 'sales.view');
+    $admin = User::factory()->for($tenant)->create();
+    $admin->branches()->attach($branch);
+    $admin->assignRole($role);
+    // Owner ($owner) holds users.manage too, so strip the Owner role to leave $role as the sole holder.
+    $owner->removeRole(tenantRole($tenant, SystemRoles::OWNER));
+    $owner->assignRole(tenantRole($tenant, SystemRoles::CASHIER));
+
+    $this->actingAs($admin)
+        ->put("/app/settings/roles/{$role->id}", ['permissions' => ['sales.view']])
+        ->assertSessionHasErrors('form');
+    expect($role->refresh()->permissions->pluck('name')->map(strval(...))->all())->toContain('users.manage');
+});

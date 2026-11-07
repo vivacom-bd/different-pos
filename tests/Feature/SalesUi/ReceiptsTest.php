@@ -46,13 +46,24 @@ it('prints an A4 tax invoice with both BINs, customer number and shop name', fun
         ->assertSee('VAT summary');
 });
 
-it('uses Bangla digits in bn', function (): void {
+it('uses Bangla digits in bn (A4 tax invoice by default)', function (): void {
     $this->actingAs($this->world->user('Cashier'))->get(route('sales.receipt', [$this->sale->id, 'lang' => 'bn']))
         ->assertOk()
         ->assertSee('<html lang="bn">', false)
         ->assertSee('৳২,৪৬৯.০০')
-        ->assertSee('রসিদ')
+        ->assertSee('কর চালান')
         ->assertDontSee('৳2,469.00');
+});
+
+it('defaults to an A4 tax invoice when no paper is given and falls back on invalid values', function (): void {
+    $this->actingAs($this->world->user('Cashier'))->get(route('sales.receipt', [$this->sale->id]))
+        ->assertOk()
+        ->assertSee('size: A4', false)
+        ->assertSee('paper-a4', false);
+
+    $this->actingAs($this->world->user('Cashier'))->get(route('sales.receipt', [$this->sale->id, 'paper' => 'letter']))
+        ->assertOk()
+        ->assertSee('size: A4', false);
 });
 
 it('answers 501 for PDF until mPDF is installed', function (): void {

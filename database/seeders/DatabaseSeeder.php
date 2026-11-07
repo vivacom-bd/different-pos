@@ -27,8 +27,8 @@ final class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $store = $this->tenant('different-fashion', 'DIFFERENT FASHION', '+8801974202796');
-        $main = $this->branch($store, 'DF1', 'Main');
-        $second = $this->branch($store, 'DF2', 'Branch 2');
+        $main = $this->branch($store, 'DF1', 'Main', ['paper' => 'a4']);
+        $second = $this->branch($store, 'DF2', 'Branch 2', ['paper' => 'a4']);
 
         // Demo data backs the tests and browser checks, and its weak logins must not reach a shared server.
         $demo = app()->environment(['local', 'testing']) ? $this->tenant('demo-store', 'Demo Store') : null;
@@ -101,12 +101,13 @@ final class DatabaseSeeder extends Seeder
         return $tenant;
     }
 
-    private function branch(Tenant $tenant, string $code, string $name): Branch
+    /** @param array<string, mixed> $settings */
+    private function branch(Tenant $tenant, string $code, string $name, array $settings = []): Branch
     {
         return app(TenantContext::class)->withoutTenancy(
             fn (): Branch => Branch::query()->firstOrCreate(
                 ['tenant_id' => $tenant->id, 'code' => $code],
-                ['name' => $name, 'is_active' => true],
+                ['name' => $name, 'is_active' => true, 'settings' => $settings],
             ),
         );
     }

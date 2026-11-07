@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Policies\Concerns\ChecksTenantPermissions;
+use App\Support\Permissions\SystemRoles;
 
 final class UserPolicy
 {
@@ -34,6 +35,16 @@ final class UserPolicy
     public function delete(User $user, User $model): bool
     {
         return $this->allows($user, 'users.manage', $model);
+    }
+
+    /** PIN resets are sensitive: only an Owner may reset another staff member's PIN. */
+    public function resetPin(User $user, User $model): bool
+    {
+        if ($user->is($model)) {
+            return $this->allows($user, 'users.manage', $model);
+        }
+
+        return $this->allows($user, 'users.manage', $model) && $user->hasRole(SystemRoles::OWNER);
     }
 
     /** Anyone may change their own UI preferences (theme, locale ...); nobody else's. */

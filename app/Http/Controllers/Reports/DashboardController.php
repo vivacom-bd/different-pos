@@ -63,7 +63,7 @@ final class DashboardController extends Controller
         if ($canAll && $choice === 'all') {
             return ['all', null];
         }
-        if ($canAll && ctype_digit($choice) && Branch::query()->whereKey((int) $choice)->exists()) {
+        if ($canAll && ctype_digit($choice) && Branch::query()->whereKey((int) $choice)->where('is_active', true)->exists()) {
             return [$choice, (int) $choice];
         }
 

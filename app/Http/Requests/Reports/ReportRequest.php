@@ -95,7 +95,7 @@ final class ReportRequest extends FormRequest
         if ($choice === 'all') {
             return null;
         }
-        if (ctype_digit($choice) && Branch::query()->whereKey((int) $choice)->exists()) {
+        if (ctype_digit($choice) && Branch::query()->whereKey((int) $choice)->where('is_active', true)->exists()) {
             return [(int) $choice];
         }
 

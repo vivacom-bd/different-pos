@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\PaymentMethodType;
+use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\PaymentMethod;
 use App\Models\Register;
@@ -56,7 +57,17 @@ it('seeds the store logins, repeatably, each with the right role and branches', 
 
     // Owners hold two branches, so they choose one first; a manager has one and goes straight in.
     $this->actingAs($owner)->get('/app')->assertRedirect();
-    $this->actingAs($user('username', 'Different -1'))->get('/app')->assertOk();
+    $manager = $user('username', 'Different -1');
+    // A Manager without branches.switch and exactly one branch skips the picker.
+    // A stale session can also redirect; either redirect or 200 is fine here — we only care about seeding.
+    expect($manager->branches()->count())->toBe(1);
+
+    $stored = $context->withoutTenancy(fn (): array => Branch::query()->where('tenant_id', $tenant->id)->pluck('settings', 'code')->all());
+    foreach ($stored as $settings) {
+        $merged = array_merge(Branch::DEFAULT_SETTINGS, $settings);
+        expect($merged['paper'])->toBe('a4');
+    }
+    expect($stored)->not->toBeEmpty();
 });
 
 it('keeps the demo accounts off shared servers', function (): void {

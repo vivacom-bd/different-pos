@@ -31,6 +31,7 @@ const EXPECTED_PERMISSIONS = [
     'reports.view', 'reports.export', 'reports.profit', 'reports.all_branches',
     'branches.switch',
     'users.manage', 'settings.manage', 'audit.view',
+    'backup.view', 'backup.run',
 ];
 
 function rolePermissions(Tenant $tenant, string $role): array
@@ -70,7 +71,7 @@ it('creates the five system roles per tenant', function (): void {
         ]);
 
     expect(rolePermissions($tenant, 'Owner'))->toBe(sorted(EXPECTED_PERMISSIONS))
-        ->and(rolePermissions($tenant, 'Manager'))->toBe(sorted(array_diff(EXPECTED_PERMISSIONS, ['users.manage', 'settings.manage', 'audit.view', 'branches.switch', 'reports.all_branches'])))
+        ->and(rolePermissions($tenant, 'Manager'))->toBe(sorted(array_diff(EXPECTED_PERMISSIONS, ['users.manage', 'settings.manage', 'audit.view', 'branches.switch', 'reports.all_branches', 'backup.view', 'backup.run'])))
         ->and(rolePermissions($tenant, 'Cashier'))->toBe(sorted([
             'dashboard.view', 'pos.sell', 'sales.view', 'returns.view', 'customers.view', 'customers.create',
             'cards.view', 'products.view', 'stock.view', 'payments.collect',
@@ -149,4 +150,15 @@ it('does not leak a role across tenant teams', function (): void {
 
 it('rejects unknown permission patterns', function (): void {
     expect(fn () => Permission::expand(['nope.*']))->toThrow(InvalidArgumentException::class);
+});
+
+it('expands wildcard and prefix patterns with dedupe', function (): void {
+    expect(Permission::expand(['*']))->toBe(Permission::ALL);
+    expect(sorted(Permission::expand(['products.*'])))->toBe(sorted(['products.view', 'products.create', 'products.update', 'products.delete', 'products.view_cost']));
+    expect(Permission::expand(['sales.view', 'sales.view']))->toBe(['sales.view']);
+});
+
+it('exposes a sensitive permission set for owner-only role edits', function (): void {
+    expect(Permission::SENSITIVE)->toBe(['users.manage', 'settings.manage', 'audit.view', 'backup.view', 'backup.run']);
+    expect(array_diff(Permission::SENSITIVE, Permission::ALL))->toBe([]);
 });

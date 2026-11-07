@@ -97,6 +97,15 @@ it('rejects a duplicate branch code and bad settings', function (): void {
     $this->post('/app/settings/branches', ['code' => 'NEW', 'name' => 'New', 'settings' => ['paper' => 'letter']])->assertSessionHasErrors('settings.paper');
 });
 
+it('defaults a new branch to A4 paper', function (): void {
+    [$owner] = adminActor();
+
+    $this->actingAs($owner)->post('/app/settings/branches', ['code' => 'NEW4', 'name' => 'New Four'])->assertRedirect();
+
+    $branch = Branch::query()->where('code', 'NEW4')->firstOrFail();
+    expect($branch->setting('paper'))->toBe('a4');
+});
+
 it('lets another tenant reuse a branch code', function (): void {
     [$owner, , $branch] = adminActor();
     [$foreignOwner] = adminActor();

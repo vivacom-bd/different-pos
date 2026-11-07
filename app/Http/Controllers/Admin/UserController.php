@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Actions\Users\DeactivateUser;
+use App\Actions\Users\ReactivateUser;
 use App\Actions\Users\ResetStaffPin;
 use App\Actions\Users\SaveUser;
 use App\Http\Controllers\Admin\Concerns\RendersStaffPage;
@@ -70,6 +71,16 @@ final class UserController extends Controller implements HasMiddleware
     {
         $model = User::query()->inCurrentTenant()->findOrFail($user);
         $this->guarded(fn (): User => $deactivate->handle($this->actor($request), $model));
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('app.updated')]);
+
+        return back();
+    }
+
+    /** POST /app/settings/users/{user}/reactivate: restores a deactivated user. */
+    public function reactivate(Request $request, int $user, ReactivateUser $reactivate): RedirectResponse
+    {
+        $model = User::query()->inCurrentTenant()->findOrFail($user);
+        $this->guarded(fn (): User => $reactivate->handle($this->actor($request), $model));
         Inertia::flash('toast', ['type' => 'success', 'message' => __('app.updated')]);
 
         return back();

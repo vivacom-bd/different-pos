@@ -58,6 +58,7 @@ Route::prefix('settings')->group(function (): void {
         Route::get('users/{user}/edit', [UserController::class, 'edit'])->whereNumber('user')->name('users.edit');
         Route::put('users/{user}', [UserController::class, 'update'])->whereNumber('user')->name('users.update');
         Route::post('users/{user}/deactivate', [UserController::class, 'deactivate'])->whereNumber('user')->name('users.deactivate');
+        Route::post('users/{user}/reactivate', [UserController::class, 'reactivate'])->whereNumber('user')->name('users.reactivate');
         Route::post('users/{user}/pin', [UserController::class, 'resetPin'])->whereNumber('user')->middleware('throttle:20,1')->name('users.pin.reset');
 
         Route::get('roles', [RoleController::class, 'index'])->name('roles.index');

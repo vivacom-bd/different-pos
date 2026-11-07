@@ -106,6 +106,15 @@ final readonly class SaveUser
         if ($hadOwner && $owner === null && ! $this->otherActiveOwnerExists($user)) {
             throw InvalidAdminData::invalid('The business needs at least one active Owner.');
         }
+        $hadUsersManage = $user->checkPermissionTo('users.manage');
+        $hasUsersManage = $roles->contains(function ($r): bool {
+            $names = $r->permissions->pluck('name')->map(strval(...))->all();
+
+            return in_array('users.manage', $names, true);
+        });
+        if ($hadUsersManage && ! $hasUsersManage && ! $this->otherActiveUsersManageHolderExists($user)) {
+            throw InvalidAdminData::invalid('The business needs at least one active user with users.manage.');
+        }
 
         $user->syncRoles($roles->all());
 
@@ -140,6 +149,15 @@ final readonly class SaveUser
         if ($user->hasRole(SystemRoles::OWNER) && ! $this->otherActiveOwnerExists($user)) {
             throw InvalidAdminData::invalid('The business needs at least one active Owner.');
         }
+        if ($user->checkPermissionTo('users.manage') && ! $this->otherActiveUsersManageHolderExists($user)) {
+            throw InvalidAdminData::invalid('The business needs at least one active user with users.manage.');
+        }
+    }
+
+    private function otherActiveUsersManageHolderExists(User $user): bool
+    {
+        return User::query()->inCurrentTenant()->where('is_active', true)->whereKeyNot($user->id)
+            ->whereHas('roles.permissions', fn ($q) => $q->where('name', 'users.manage'))->exists();
     }
 
     private function otherActiveOwnerExists(User $user): bool

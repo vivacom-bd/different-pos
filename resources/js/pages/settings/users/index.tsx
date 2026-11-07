@@ -45,7 +45,12 @@ type Props = {
     meta: { page: number; perPage: number; total: number; lastPage: number };
     roles: StaffRole[];
     branches: StaffBranch[];
-    matrix: { permissions: string[]; roles: MatrixRole[] };
+    matrix: {
+        permissions: string[];
+        roles: MatrixRole[];
+        sensitive_permissions?: string[];
+        is_owner?: boolean;
+    };
     business: string;
     dialog: 'create' | 'edit' | null;
     editing: StaffForm | null;
@@ -95,6 +100,7 @@ export default function UsersIndex({
     );
     const [pinFor, setPinFor] = useState<UserRow | null>(null);
     const [deactivating, setDeactivating] = useState<UserRow | null>(null);
+    const [reactivating, setReactivating] = useState<UserRow | null>(null);
 
     useEffect(
         () => actions.register(resetPinAction as unknown as AppAction<never>),
@@ -147,6 +153,8 @@ export default function UsersIndex({
             'user.reset_pin': (row: UserRow) => setPinFor(row),
             'user.deactivate': (row: UserRow) =>
                 row.is_active ? setDeactivating(row) : undefined,
+            'user.reactivate': (row: UserRow) =>
+                !row.is_active ? setReactivating(row) : undefined,
         }),
         [],
     );
@@ -274,7 +282,22 @@ export default function UsersIndex({
                     >
                         {t('users.reset_pin')}
                     </Button>
-                ) : null,
+                ) : (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-6 bg-surface-sunken px-2 text-[10px] hover:border-primary [@media(pointer:coarse)]:min-h-11"
+                        aria-label={`${t('users.reactivate')}: ${r.name}`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setReactivating(r);
+                        }}
+                    >
+                        {t('users.reactivate')}
+                    </Button>
+                ),
         },
     ];
 
@@ -374,6 +397,8 @@ export default function UsersIndex({
                 <RoleMatrix
                     permissions={matrix.permissions}
                     roles={matrix.roles}
+                    sensitive_permissions={matrix.sensitive_permissions}
+                    is_owner={matrix.is_owner}
                 />
             </Page>
 
@@ -383,6 +408,8 @@ export default function UsersIndex({
                     user={staff === 'new' ? null : staff}
                     roles={roles}
                     branches={branches}
+                    sensitive_permissions={matrix.sensitive_permissions}
+                    is_owner={matrix.is_owner}
                     onClose={closeStaff}
                 />
             ) : null}
@@ -403,6 +430,25 @@ export default function UsersIndex({
                     deactivating
                         ? router.post(
                               `${LIST}/${deactivating.id}/deactivate`,
+                              {},
+                              { preserveScroll: true },
+                          )
+                        : undefined
+                }
+            />
+            <ConfirmDialog
+                open={reactivating !== null}
+                onOpenChange={(open) =>
+                    open ? undefined : setReactivating(null)
+                }
+                title={t('users.reactivate_title')}
+                description={t('users.reactivate_body')}
+                confirmLabel={t('users.reactivate')}
+                recordName={reactivating?.name ?? ''}
+                onConfirm={() =>
+                    reactivating
+                        ? router.post(
+                              `${LIST}/${reactivating.id}/reactivate`,
                               {},
                               { preserveScroll: true },
                           )

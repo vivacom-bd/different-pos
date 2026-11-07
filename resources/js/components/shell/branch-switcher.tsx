@@ -65,7 +65,12 @@ export function BranchSwitcher() {
                     <DropdownMenuItem
                         key={branch.id}
                         className="min-h-11 md:min-h-8"
-                        onSelect={() => router.post(switchUrl(branch.id))}
+                        onSelect={() => {
+                            close();
+                            // Full visit to the dashboard: prefetched links may hold
+                            // old-branch props, so never reuse them after a switch.
+                            router.post(switchUrl(branch.id));
+                        }}
                     >
                         <span className="flex-1 truncate">{branch.name}</span>
                         {branch.id === branch_id ? (

@@ -25,9 +25,18 @@ final class Permission
         'vendors.view', 'vendors.create', 'vendors.update', 'vendors.delete',
         'money.view', 'money.create', 'money.manage',
         'reports.view', 'reports.export', 'reports.profit', 'reports.all_branches',
-        'branches.switch',
-        'users.manage', 'settings.manage', 'audit.view',
+        'branches.switch', 'users.manage', 'settings.manage', 'audit.view',
         'backup.view', 'backup.run',
+    ];
+
+    /**
+     * Permissions only an Owner may grant or revoke on a role. A non-Owner holder of
+     * users.manage keeps day-to-day staff admin but cannot mint or remove these.
+     *
+     * @var list<string>
+     */
+    public const array SENSITIVE = [
+        'users.manage', 'settings.manage', 'audit.view', 'backup.view', 'backup.run',
     ];
 
     /**

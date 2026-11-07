@@ -316,3 +316,13 @@ it('keeps district sales within the branch scope, the period and the tenant', fu
         ->where('dashboard.districts.total', 100_000)
         ->where('dashboard.kpis.sales.value', 100_000));
 });
+
+it('falls back to the current branch when branch= points at an inactive branch', function (): void {
+    $inactive = Branch::factory()->for($this->world->tenant)->create(['code' => 'DF9', 'is_active' => false]);
+    $owner = $this->world->user('Owner');
+
+    $this->actingAs($owner)->get(route('dashboard', ['branch' => (string) $inactive->id]))
+        ->assertInertia(fn ($page) => $page
+            ->where('filters.branch', 'current')
+            ->where('dashboard.kpis.sales.value', 300_000));
+});

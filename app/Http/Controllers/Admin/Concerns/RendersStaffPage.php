@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\User;
 use App\Support\Http\TableQuery;
 use App\Support\Permissions\Permission;
+use App\Support\Permissions\SystemRoles;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -46,11 +47,14 @@ trait RendersStaffPage
             'meta' => ['page' => $page->currentPage(), 'perPage' => $page->perPage(), 'total' => $page->total(), 'lastPage' => $page->lastPage()],
             'roles' => array_values($roles->sortBy('name')->map(static fn (Role $r): array => [
                 'id' => (int) $r->id, 'name' => $r->name, 'is_system' => (bool) $r->getAttribute('is_system'),
+                'permissions' => array_values($r->permissions->pluck('name')->map(strval(...))->all()),
             ])->all()),
             'branches' => array_values(Branch::query()->where('is_active', true)->orderBy('name')->get()
                 ->map(static fn (Branch $b): array => ['id' => $b->id, 'name' => $b->name, 'code' => $b->code])->all()),
             'matrix' => [
                 'permissions' => Permission::ALL,
+                'sensitive_permissions' => Permission::SENSITIVE,
+                'is_owner' => $request->user()?->hasRole(SystemRoles::OWNER) ?? false,
                 'roles' => array_values($roles->map(static fn (Role $r): array => [
                     'id' => (int) $r->id,
                     'name' => $r->name,

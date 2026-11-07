@@ -43,7 +43,7 @@ final class PublicReceiptController extends Controller
         $lang = $request->query('lang');
         $locale = is_string($lang) && in_array($lang, ['en', 'bn'], true) ? $lang : ($tenant->locale === 'bn' ? 'bn' : 'en');
         app()->setLocale($locale);
-        $paper = $request->query('paper') === 'a4' ? 'a4' : '80';
+        $paper = in_array($request->query('paper'), ReceiptRenderer::PAPERS, true) ? (string) $request->query('paper') : 'a4';
 
         $html = $context->run($tenant, $branch, static fn (): string => $renderer->html(
             $paper === 'a4' ? 'a4' : 'thermal',
