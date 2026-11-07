@@ -104,3 +104,25 @@ it('shares today\'s net sales and invoice count for the current branch, only wit
     $this->actingAs($keeper->user)->withSession(['branch_id' => $keeper->branch->id])->get('/app/stock')
         ->assertInertia(fn (Assert $page) => $page->where('todayTicker', null));
 });
+
+it('embeds the branch id in the inertia version so a switch drops old-branch page cache', function (): void {
+    $world = CatalogWorld::make();
+    $owner = $world->user;
+    $second = app(TenantContext::class)->withoutTenancy(fn () => Branch::factory()->for($world->tenant)->create());
+    $owner->branches()->syncWithoutDetaching([$world->branch->id, $second->id]);
+
+    $data = $this->actingAs($owner)->withSession(['branch_id' => $world->branch->id])->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('auth.branch_id', $world->branch->id))
+        ->original->getData()['page'];
+    $oldVersion = $data['version'];
+
+    $this->actingAs($owner)->post("/app/branch/{$second->id}/switch")->assertRedirect(route('dashboard'));
+
+    $data = $this->actingAs($owner)->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('auth.branch_id', $second->id))
+        ->original->getData()['page'];
+    expect($data['version'])->not->toBe($oldVersion)
+        ->and($data['version'])->toContain('branch-'.$second->id);
+});

@@ -26,11 +26,20 @@ final class HandleInertiaRequests extends Middleware
     /**
      * Determines the current asset version.
      *
+     * The branch id is part of the version on purpose: when the branch changes, the version
+     * changes, so Inertia drops every cached page and history entry for the old branch and
+     * forces a fresh server fetch. Without this, browser Back/Forward and prefetched links
+     * restore old-branch page props (every list, report and the dashboard) until a hard
+     * refresh, even though the shared auth.branch_id already shows the new branch.
+     *
      * @see https://inertiajs.com/asset-versioning
      */
     public function version(Request $request): ?string
     {
-        return parent::version($request);
+        $context = app(TenantContext::class);
+        $branch = $context->hasBranch() ? $context->branchId() : 0;
+
+        return parent::version($request).':branch-'.$branch;
     }
 
     /**
