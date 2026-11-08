@@ -22,7 +22,7 @@ vi.mock('@inertiajs/react', () => ({
     ),
     router: { post: (url: string) => posts.push(url) },
     usePage: () => ({
-        props: { auth: { permissions: [] } },
+        props: { auth: { permissions: [], branch_paper: 'a4' } },
         url: '/app/sales/9',
     }),
 }));
@@ -229,7 +229,7 @@ describe('SaleInvoiceDialog', () => {
         expect(navigations).toEqual(['/app/returns/create?sale=9']);
         fireEvent.keyDown(document.body, { key: 'p' });
         expect(open).toHaveBeenCalledWith(
-            '/app/sales/9/receipt?paper=80&print=1',
+            '/app/sales/9/receipt?paper=a4&print=1',
             '_blank',
             'noopener',
         );

@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronDown, Languages, Search } from 'lucide-react';
+import { useEffect } from 'react';
 import AppLogo from '@/components/app-logo';
 import { Kbd } from '@/components/kbd';
 import { BranchSwitcher } from '@/components/shell/branch-switcher';
@@ -21,16 +22,25 @@ import { useDigits } from '@/hooks/use-digits';
 import { useInitials } from '@/hooks/use-initials';
 import { useT } from '@/i18n';
 import { usePreferences } from '@/lib/preferences';
+import { setBranchPaper } from '@/lib/sales';
 import { dashboard } from '@/routes';
 
 /** 52 px (44 compact). On phones it shrinks to logo · sync · bell · avatar (02_AppFlow §1). */
 export function TopBar() {
     const { t, locale } = useT();
     const prefs = usePreferences();
-    const user = usePage().props.auth.user;
+    const { auth } = usePage().props;
+    const user = auth?.user;
     const openOverlay = useUiStore((s) => s.open);
     const can = useCan();
     const home = can('platform.admin') ? '/platform' : dashboard();
+
+    // Keep the window-level branch paper in step with the server (branch switch
+    // changes it without a full remount of the persistent shell).
+    const branchPaper = auth?.branch_paper;
+    useEffect(() => {
+        setBranchPaper(branchPaper ?? null);
+    }, [branchPaper]);
 
     return (
         <header

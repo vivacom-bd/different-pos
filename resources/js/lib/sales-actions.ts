@@ -9,7 +9,7 @@ import {
     Undo2,
 } from 'lucide-react';
 import { actions, type AppAction } from '@/command/actions';
-import { openPrint, salesUrl } from '@/lib/sales';
+import { branchPaper, openPrint, salesUrl } from '@/lib/sales';
 
 /** What a sale row needs for its context menu. */
 export type SaleRowLike = {
@@ -33,7 +33,7 @@ const saleActions: AppAction<SaleRowLike>[] = [
         icon: Printer,
         keys: 'p',
         permission: 'sales.view',
-        run: ({ row }) => openPrint(salesUrl.receipt(row.id, '80')),
+        run: ({ row }) => openPrint(salesUrl.receipt(row.id, branchPaper())),
     },
     {
         id: 'sale.invoice',

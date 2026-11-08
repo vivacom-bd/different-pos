@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     Ban,
     ChevronDown,
@@ -38,6 +38,7 @@ import { useHotkeys } from '@/hotkeys/use-hotkeys';
 import { useT } from '@/i18n';
 import { apiRequest } from '@/lib/api';
 import {
+    defaultPaper,
     openPrint,
     salesUrl,
     type CustomerSummary,
@@ -166,6 +167,7 @@ export function SaleInvoiceDialog({
 }) {
     const { t } = useT();
     const digits = useDigits();
+    const branchPaper = usePage().props.auth.branch_paper;
     const { sale, customer, lines, payments, returns, can, sms, audit } =
         detail;
     const exchangeOf = detail.exchange_of;
@@ -217,10 +219,11 @@ export function SaleInvoiceDialog({
         {
             id: 'print',
             keys: 'p',
-            label: t('sales.print_80'),
+            label: t('sales.print_receipt'),
             icon: Printer,
             show: true,
-            run: () => openPrint(salesUrl.receipt(sale.id, '80')),
+            run: () =>
+                openPrint(salesUrl.receipt(sale.id, defaultPaper(branchPaper))),
             variant: 'outline' as const,
         },
         {

@@ -50,6 +50,7 @@ import { DownloadError, downloadFile } from '@/lib/download';
 import { exportItems, exportUrl, type ExportFormat } from '@/lib/export-items';
 import { downloadRowsCsv, type CsvColumn } from '@/lib/rows-csv';
 import {
+    defaultPaper,
     openPrint,
     salesUrl,
     type CustomerSummary,
@@ -117,6 +118,7 @@ export default function SalesIndex({
     const { t } = useT();
     const digits = useDigits();
     const can = useCan();
+    const branchPaper = usePage().props.auth.branch_paper;
     const table = useServerTable();
     const url = usePage().url;
     const query = url.includes('?') ? url.slice(url.indexOf('?')) : '';
@@ -424,7 +426,12 @@ export default function SalesIndex({
                                 number: r.number,
                             })}
                             onClick={() =>
-                                openPrint(salesUrl.receipt(r.id, '80'))
+                                openPrint(
+                                    salesUrl.receipt(
+                                        r.id,
+                                        defaultPaper(branchPaper),
+                                    ),
+                                )
                             }
                         >
                             <Printer className="size-3.5" aria-hidden="true" />
@@ -444,7 +451,7 @@ export default function SalesIndex({
                 ),
             },
         ],
-        [digits, t, branch, can],
+        [digits, t, branch, branchPaper, can],
     );
     const columnState = useColumnVisibility(columns);
 

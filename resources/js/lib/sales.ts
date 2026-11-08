@@ -20,6 +20,30 @@ export type MoneyMethod = {
 
 export type Paper = '80' | '58' | 'a4';
 
+/**
+ * The branch's default paper, so Sales History / Returns / Dues print what the branch prints
+ * (A4 for Different Fashion) instead of an assumed 80 mm. Falls back to A4.
+ */
+export function defaultPaper(pagePaper?: Paper | null): Paper {
+    return pagePaper === '80' || pagePaper === '58' || pagePaper === 'a4'
+        ? pagePaper
+        : 'a4';
+}
+
+/** Window-held current branch paper (set by the shell), for context-menu actions with no page prop. */
+export function setBranchPaper(paper?: Paper | null): void {
+    (
+        window as { __BRANCH_PAPER__?: Paper | null | undefined }
+    ).__BRANCH_PAPER__ = paper ?? null;
+}
+
+export function branchPaper(): Paper {
+    return defaultPaper(
+        (window as { __BRANCH_PAPER__?: Paper | null | undefined })
+            .__BRANCH_PAPER__,
+    );
+}
+
 export const salesUrl = {
     index: '/app/sales',
     show: (id: number) => `/app/sales/${id}`,

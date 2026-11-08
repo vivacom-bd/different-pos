@@ -63,6 +63,9 @@ final class HandleInertiaRequests extends Middleware
                 'roles' => fn (): array => $this->roles($request, $context),
                 'branches' => fn (): array => $this->branches($request, $context),
                 'branch_id' => fn (): ?int => $context->hasBranch() ? $context->branchId() : null,
+                'branch_paper' => fn (): ?string => $context->hasBranch()
+                    ? (string) ($context->branch()->setting('paper') ?? 'a4')
+                    : null,
             ],
             // Lazy for the same reason; null outside a tenant context (guests, the platform console).
             'tenant' => fn (): ?array => $context->hasTenant()

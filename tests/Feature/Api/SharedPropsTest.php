@@ -33,6 +33,7 @@ it('shares the user\'s permissions, own branches and preferences with every page
             && ! in_array('users.manage', $permissions->all(), true))
         ->where('auth.branches', [['id' => $branch->id, 'name' => $branch->name]])
         ->where('auth.branch_id', $branch->id)
+        ->where('auth.branch_paper', 'a4')
         ->where('preferences.locale', 'bn')
         ->where('preferences.scheme', 'rose')
         ->where('preferences.density', 'comfortable')

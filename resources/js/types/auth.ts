@@ -22,8 +22,11 @@ export type Auth = {
     /** The user's active branches; the branch switcher shows only when there is more than one. */
     branches: AuthBranch[];
     branch_id: number | null;
+    /** Default receipt paper for the current branch (80|58|a4); null outside a branch context. */
+    branch_paper?: '80' | '58' | 'a4' | null;
     /** Display names of the user's roles in the current tenant (sidebar "Active role" card, status bar); optional until the server shares it. */
     roles?: string[];
+    [key: string]: unknown;
 };
 
 export type Passkey = {

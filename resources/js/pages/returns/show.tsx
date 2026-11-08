@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, FileText, Printer, Truck } from 'lucide-react';
 import { Fragment } from 'react';
 import { Kbd } from '@/components/kbd';
@@ -8,7 +8,12 @@ import { navigateTo } from '@/command/navigate';
 import { useDigits } from '@/hooks/use-digits';
 import { useHotkeys } from '@/hotkeys/use-hotkeys';
 import { useT } from '@/i18n';
-import { openPrint, salesUrl, type CustomerSummary } from '@/lib/sales';
+import {
+    defaultPaper,
+    openPrint,
+    salesUrl,
+    type CustomerSummary,
+} from '@/lib/sales';
 
 type Props = {
     saleReturn: {
@@ -55,11 +60,17 @@ export default function ReturnShow({
 }: Props) {
     const { t } = useT();
     const digits = useDigits();
-    const print80 = () => openPrint(salesUrl.returnReceipt(r.id, '80'));
+    const branchPaper = usePage().props.auth.branch_paper;
+    const print80 = () =>
+        openPrint(salesUrl.returnReceipt(r.id, defaultPaper(branchPaper)));
     const printA4 = () => openPrint(salesUrl.returnReceipt(r.id, 'a4'));
     // sales.receipt and sales.chalan take the numeric sale id of the replacement sale.
     const printInvoice = () =>
-        exchange ? openPrint(salesUrl.receipt(exchange.id, '80')) : undefined;
+        exchange
+            ? openPrint(
+                  salesUrl.receipt(exchange.id, defaultPaper(branchPaper)),
+              )
+            : undefined;
     const printChalan = () =>
         exchange ? openPrint(salesUrl.chalan(exchange.id)) : undefined;
 
