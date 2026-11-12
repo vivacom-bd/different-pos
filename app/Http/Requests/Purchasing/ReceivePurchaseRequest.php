@@ -24,7 +24,7 @@ final class ReceivePurchaseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'vendor_id' => ['required', 'integer', ScopedExists::in('vendors', softDeletes: true)],
+            'vendor_id' => ['nullable', 'integer', ScopedExists::in('vendors', softDeletes: true)],
             'vendor_ref' => ['nullable', 'string', 'max:120'],
             'purchased_at' => ['nullable', 'date'],
             'discount' => ['nullable', 'integer', 'min:0'],

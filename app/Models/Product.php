@@ -91,6 +91,43 @@ final class Product extends Model
         return $query->where('products.item_type', ProductItemType::Finished->value);
     }
 
+    /**
+     * Shared product search: every whitespace-separated word must match name, name_bn, sku (the product
+     * code) or barcode (contains).
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        foreach (preg_split('/\s+/u', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+            $like = '%'.addcslashes($word, '%_\\').'%';
+            $query->where(static fn (Builder $q): Builder => $q->where('products.name', 'like', $like)
+                ->orWhere('products.name_bn', 'like', $like)
+                ->orWhere('products.sku', 'like', $like)
+                ->orWhere('products.barcode', 'like', $like));
+        }
+
+        return $query;
+    }
+
+    /**
+     * Exact sku/barcode first, then code prefix, then the rest.
+     *
+     * @param  Builder<Product>  $query
+     * @return Builder<Product>
+     */
+    public function scopeOrderByCodeMatch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        $prefix = addcslashes($term, '%_\\').'%';
+
+        return $query->orderByRaw(
+            'CASE WHEN products.sku = ? OR products.barcode = ? THEN 0 WHEN products.sku LIKE ? OR products.barcode LIKE ? THEN 1 ELSE 2 END',
+            [$term, $term, $prefix, $prefix],
+        );
+    }
+
     public function isRawMaterial(): bool
     {
         return $this->item_type === ProductItemType::RawMaterial;

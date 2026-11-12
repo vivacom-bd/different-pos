@@ -25,6 +25,7 @@ type Business = {
     tax_inclusive: boolean;
     backdate_days: number;
     return_days: number | null;
+    default_unit_id: number | null;
     default_credit_limit: number | null;
     customer_pin_policy: string;
     offline_credit_cap: number;
@@ -49,9 +50,11 @@ type TextKey =
 export default function BusinessSettings({
     business,
     timezones,
+    units,
 }: {
     business: Business;
     timezones: string[];
+    units: { id: number; name: string; short_name: string }[];
 }) {
     const { t } = useT();
     const form = useForm({
@@ -68,6 +71,7 @@ export default function BusinessSettings({
         tax_inclusive: business.tax_inclusive,
         backdate_days: business.backdate_days,
         return_days: business.return_days as number | null,
+        default_unit_id: business.default_unit_id as number | null,
         default_credit_limit: business.default_credit_limit as number | null,
         customer_pin_policy: business.customer_pin_policy,
         offline_credit_cap: business.offline_credit_cap,
@@ -257,6 +261,30 @@ export default function BusinessSettings({
                                     form.setData('tax_inclusive', v)
                                 }
                             />
+                            <FormField
+                                label={t('business.default_unit')}
+                                hint={t('business.default_unit_hint')}
+                                error={errors['default_unit_id']}
+                            >
+                                <select
+                                    className="h-9 w-full rounded-lg border bg-surface-sunken px-2.5 text-sm text-foreground outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-ring/50 [@media(pointer:coarse)]:min-h-11"
+                                    value={form.data.default_unit_id ?? ''}
+                                    onChange={(e) =>
+                                        form.setData(
+                                            'default_unit_id',
+                                            e.target.value === ''
+                                                ? null
+                                                : Number(e.target.value),
+                                        )
+                                    }
+                                >
+                                    {units.map((u) => (
+                                        <option key={u.id} value={u.id}>
+                                            {u.name} ({u.short_name})
+                                        </option>
+                                    ))}
+                                </select>
+                            </FormField>
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <FormField
                                     label={t('business.return_days')}

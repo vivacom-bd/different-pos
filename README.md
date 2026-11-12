@@ -11,7 +11,7 @@ A multi-tenant, multi-branch retail POS for Bangladesh with an offline-first reg
 | Database | MySQL 8.4 (utf8mb4), Redis 7 (optional queue/cache) |
 | Authz | Spatie Permission (teams = `tenant_id`) + Policies + Gates |
 | Misc | Sanctum, Activity Log, Backups, Telescope/Pulse (dev), Sentry (optional) |
-| Browser | Hind Siliguri + Inter variables; `vp` (vite-plus) builds |
+| Browser | Hind Siliguri + Poppins; `vp` (vite-plus) builds |
 
 ## Project structure
 

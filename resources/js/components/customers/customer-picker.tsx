@@ -67,7 +67,7 @@ export function CustomerPicker({
                     setOpen(true);
                 })
                 .catch(() => undefined);
-        }, 200);
+        }, 400);
 
         return () => {
             controller.abort();

@@ -30,10 +30,7 @@ final class ProductImageController extends Controller
         $rows = Product::query()
             ->whereNotNull('image_path')
             ->where('image_path', '!=', '')
-            ->when($term !== '', fn ($q) => $q->where(fn ($w) => $w
-                ->where('name', 'like', '%'.addcslashes($term, '%_\\').'%')
-                ->orWhere('name_bn', 'like', '%'.addcslashes($term, '%_\\').'%')
-                ->orWhere('sku', 'like', addcslashes($term, '%_\\').'%')))
+            ->when($term !== '', fn ($q) => $q->search($term))
             ->selectRaw('image_path, MIN(name) as name, COUNT(*) as uses, MAX(id) as latest')
             ->groupBy('image_path')
             ->orderByDesc('latest')

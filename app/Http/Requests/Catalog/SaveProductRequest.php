@@ -40,7 +40,11 @@ final class SaveProductRequest extends FormRequest
         $creating = ! $this->route('product') instanceof Product;
         $raw = $this->input('item_type') === ProductItemType::RawMaterial->value;
 
+        // Opening stock: create-only, simple products (no variant grid), and only for users who may adjust stock.
+        $canOpen = $creating && $this->user()?->can('stock.adjust') === true && ! $this->filled('variants');
+
         return [
+            'opening_qty' => $canOpen ? ['nullable', 'integer', 'min:0', 'max:99999999999'] : ['prohibited'],
             'name' => ['required', 'string', 'max:190'],
             'name_bn' => ['nullable', 'string', 'max:190'],
             'sku' => ['required', 'string', 'max:64'],

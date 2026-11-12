@@ -14,7 +14,9 @@ use App\Models\Geo\GeoDistrict;
 use App\Models\Geo\GeoDivision;
 use App\Models\Geo\GeoUnion;
 use App\Models\Geo\GeoUpazila;
+use App\Support\Customers\CustomerNumber;
 use App\Support\Money\Money;
+use App\Support\Phone\BdPhone;
 use Database\Factories\CustomerFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -116,6 +118,40 @@ final class Customer extends Model
         return $query->orWhere(static fn (Builder $number): Builder => $number
             ->where('customer_no', 'like', $digits.'%')
             ->orWhere('customer_no', 'like', '%'.$digits));
+    }
+
+    /**
+     * Shared list/picker search: every word must match name, name_bn or shop_name (contains), a phone
+     * or alt phone (normalised national digits, contains, 3+ digits) or the customer number.
+     * A term made only of digits / spaces / + / - is one phone-like token ("017 18-42").
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $term = trim($term);
+        if ($term === '') {
+            return $query;
+        }
+        $tokens = BdPhone::searchPattern($term) !== null ? [$term] : (preg_split('/\s+/u', $term, -1, PREG_SPLIT_NO_EMPTY) ?: []);
+
+        foreach ($tokens as $token) {
+            $like = '%'.addcslashes($token, '%_\\').'%';
+            $phone = BdPhone::searchPattern($token);
+            $digits = BdPhone::looksLikePhoneStart($token) ? '' : CustomerNumber::normalize($token);
+            $query->where(function (Builder $q) use ($like, $phone, $digits): void {
+                $q->where('name', 'like', $like)->orWhere('name_bn', 'like', $like)->orWhere('shop_name', 'like', $like);
+                if ($phone !== null) {
+                    $q->orWhere('phone', 'like', $phone)->orWhere('alt_phone', 'like', $phone);
+                }
+                if ($digits !== '' && ctype_digit($digits)) {
+                    $q->orWhereNumberMatches($digits);
+                }
+            });
+        }
+
+        return $query;
     }
 
     /** @return BelongsTo<GeoDivision, $this> */

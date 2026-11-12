@@ -7,6 +7,7 @@ namespace App\Actions\Settings;
 use App\Enums\CustomerPinPolicy;
 use App\Exceptions\Domain\InvalidAdminData;
 use App\Models\Tenant;
+use App\Models\Unit;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Database\Transaction;
@@ -18,7 +19,7 @@ final readonly class SaveBusinessSettings
 {
     private const array PROFILE = ['name', 'legal_name', 'vat_bin', 'vat_registered_address', 'phone', 'email', 'address', 'currency', 'timezone', 'locale'];
 
-    private const array SETTINGS = ['tax_inclusive', 'backdate_days', 'return_days', 'default_credit_limit', 'customer_pin_policy', 'offline_credit_cap'];
+    private const array SETTINGS = ['tax_inclusive', 'backdate_days', 'return_days', 'default_unit_id', 'default_credit_limit', 'customer_pin_policy', 'offline_credit_cap'];
 
     /** @param array<string, mixed> $data */
     public function handle(User $actor, array $data): Tenant
@@ -68,9 +69,24 @@ final readonly class SaveBusinessSettings
             'tax_inclusive' => (bool) $value,
             'customer_pin_policy' => is_string($value) && CustomerPinPolicy::tryFrom($value) instanceof CustomerPinPolicy ? $value : throw InvalidAdminData::invalid('Unknown customer PIN policy.'),
             'backdate_days', 'offline_credit_cap' => $this->whole($value, false),
+            'default_unit_id' => $this->unit($value),
             // return_days, default_credit_limit: empty means "no limit"
             default => $this->whole($value, true),
         };
+    }
+
+    /** An active unit of this tenant (the scoped lookup 404s across tenants), or null to fall back to "pcs". */
+    private function unit(mixed $value): ?int
+    {
+        $id = $this->whole($value, true);
+        if ($id === null) {
+            return null;
+        }
+        if (! Unit::query()->whereKey($id)->where('is_active', true)->exists()) {
+            throw InvalidAdminData::invalid('The default unit must be an active unit.');
+        }
+
+        return $id;
     }
 
     private function whole(mixed $value, bool $nullable): ?int

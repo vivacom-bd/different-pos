@@ -51,7 +51,7 @@ describe('PurchaseCreate initial state', () => {
         ).toBe(true);
     });
 
-    it('tells the buyer why receive is disabled', () => {
+    it('tells the buyer why receive is disabled (no lines; vendor is optional)', () => {
         render(
             <PurchaseCreate
                 vendors={[{ id: 1, name: 'Acme Textiles' }]}
@@ -61,7 +61,7 @@ describe('PurchaseCreate initial state', () => {
             />,
         );
 
-        expect(screen.getByText(t('purchases.blocked_vendor'))).toBeTruthy();
+        expect(screen.getByText(t('purchases.blocked_lines'))).toBeTruthy();
     });
 
     it('offers "New item" and the All / Raw materials / Products filter only with products.create', () => {

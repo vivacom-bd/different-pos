@@ -46,14 +46,11 @@ final readonly class ProductLookup
             $like = '%'.addcslashes($term, '\\%_').'%';
             $prefix = addcslashes($term, '\\%_').'%';
             $families = ProductFamily::query()->where(fn (Builder $q) => $q->where('name', 'like', $like)->orWhere('code', 'like', $prefix))->limit(self::LIMIT)->pluck('id')->all();
-            $query->where(fn (Builder $q) => $q->where('name', 'like', $like)
-                ->orWhere('name_bn', 'like', $like)
-                ->orWhere('sku', 'like', $prefix)
-                ->orWhere('barcode', 'like', $prefix)
+            $query->where(fn (Builder $q) => $q->search($term)
                 ->when($families !== [], fn (Builder $w) => $w->orWhereIn('family_id', $families)));
         }
 
-        $hits = $query->orderBy('name')->limit(self::LIMIT * 4)->get(['id', 'family_id']);
+        $hits = $query->when($term !== '', fn (Builder $q) => $q->orderByCodeMatch($term))->orderBy('name')->limit(self::LIMIT * 4)->get(['id', 'family_id']);
 
         $familyIds = [];
         $productIds = [];

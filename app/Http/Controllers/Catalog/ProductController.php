@@ -88,7 +88,7 @@ final class ProductController extends Controller
                 'product' => ProductPresenter::detail($product, $canCost),
                 'families' => $product->family_id === null ? $this->families() : [],
             ],
-            'form' => $this->formOptions(),
+            'form' => $this->formOptions($product->unit_id),
         ]);
     }
 
@@ -239,13 +239,7 @@ final class ProductController extends Controller
             });
 
         if ($table->search !== '') {
-            $like = '%'.addcslashes($table->search, '\\%_').'%';
-            $query->where(static function ($q) use ($like): void {
-                $q->where('products.name', 'like', $like)
-                    ->orWhere('products.name_bn', 'like', $like)
-                    ->orWhere('products.sku', 'like', $like)
-                    ->orWhere('products.barcode', 'like', $like);
-            });
+            $query->search($table->search);
         }
         if (isset($table->filters['category'])) {
             $query->where('products.category_id', (int) $table->filters['category']);
@@ -400,6 +394,11 @@ final class ProductController extends Controller
             $data['cost_price'] = Money::ofPaisa((int) $v['cost_price']);
         }
 
+        // Opening stock (create only; the request already rejects it without stock.adjust or with variants).
+        if (! $product instanceof Product && ($v['opening_qty'] ?? null) !== null) {
+            $data['opening_qty'] = Quantity::ofMilli((int) $v['opening_qty']);
+        }
+
         $image = $request->file('image');
         if ($image instanceof UploadedFile) {
             $data['image_path'] = $image->store('products', 'public');
@@ -458,12 +457,15 @@ final class ProductController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function formOptions(): array
+    private function formOptions(?int $keepUnitId = null): array
     {
         return [
             'categories' => Category::query()->orderBy('name')->get(['id', 'name', 'parent_id']),
             'brands' => Brand::query()->orderBy('name')->get(['id', 'name']),
-            'units' => Unit::query()->orderBy('name')->get(['id', 'name', 'short_name', 'allows_decimal']),
+            // Only active units are offered; an edited product keeps its own unit even when it was deactivated since.
+            'units' => Unit::query()->where(static fn ($q) => $q->where('is_active', true)->when($keepUnitId !== null, static fn ($q) => $q->orWhere('id', $keepUnitId)))->orderBy('name')->get(['id', 'name', 'short_name', 'allows_decimal']),
+            'defaultUnitId' => Unit::defaultId(),
+            'canOpenStock' => $this->actor(request())->can('stock.adjust'),
             'taxRates' => TaxRate::query()->orderBy('name')->get(['id', 'name', 'rate_bp']),
             'vendors' => Vendor::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'variantOptions' => VariantOption::query()->with('values:id,variant_option_id,value,code')->orderBy('sort_order')->get(['id', 'name']),

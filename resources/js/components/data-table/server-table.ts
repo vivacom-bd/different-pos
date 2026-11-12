@@ -99,7 +99,7 @@ type Options = {
 export function useServerTable({
     only,
     defaults = DEFAULT_TABLE_STATE,
-    searchDebounceMs = 250,
+    searchDebounceMs = 400,
 }: Options = {}) {
     const url = usePage().url;
     const search = url.includes('?') ? url.slice(url.indexOf('?')) : '';
@@ -151,8 +151,9 @@ export function useServerTable({
             if (timer.current) {
                 clearTimeout(timer.current);
             }
+            const q = text.trim();
             timer.current = setTimeout(
-                () => visit({ ...state, q: text.trim(), page: 1 }),
+                () => visit({ ...state, q, page: 1 }),
                 searchDebounceMs,
             );
         },

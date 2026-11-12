@@ -95,8 +95,7 @@ final class VendorController extends Controller
     {
         $query = Vendor::query();
         if ($table->search !== '') {
-            $like = '%'.addcslashes($table->search, '\\%_').'%';
-            $query->where(static fn ($q) => $q->where('name', 'like', $like)->orWhere('company', 'like', $like)->orWhere('phone', 'like', $like)->orWhere('address', 'like', $like));
+            $query->search($table->search);
         }
         match ($table->filters['status'] ?? null) {
             'active' => $query->where('is_active', true),

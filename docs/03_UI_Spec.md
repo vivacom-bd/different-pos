@@ -91,12 +91,12 @@ A **scheme** overrides only the brand tokens: `--primary`, `--primary-hover`, `-
 
 | Role | Family | Fallback |
 |---|---|---|
-| UI (Latin) | **Inter** (variable, 400–700) | `ui-sans-serif, system-ui` |
+| UI (Latin) | **Poppins** (static 400/500/600/700; replaced Inter 2026-11-12 because digits 0 and 8 looked alike) | `ui-sans-serif, system-ui` |
 | UI (Bangla) | **Hind Siliguri** (400, 500, 600, 700) | `"Noto Sans Bengali", sans-serif` |
-| Numbers | Inter with `font-variant-numeric: tabular-nums` (utility `.num`) | — |
-| Mono (SKU, codes) | **JetBrains Mono** 400/500 | `ui-monospace` |
+| Numbers | Poppins with `font-variant-numeric: tabular-nums` (utility `.num`) | — |
+| Numbers (SKU, codes, amounts, phones) | **Poppins** with `tabular-nums` (`font-mono` utility), JetBrains Mono kept installed as fallback only | `ui-monospace` |
 
-The font stack is `Inter, "Hind Siliguri", ui-sans-serif, system-ui`, so Bangla glyphs fall through to Hind Siliguri automatically. Fonts are self-hosted (`@fontsource`), not loaded from a CDN, so a shop with bad internet still renders correctly. Bangla needs a line-height ≥ 1.6. The scale below already accounts for it.
+The font stack is `Poppins, "Hind Siliguri", ui-sans-serif, system-ui`, so Bangla glyphs fall through to Hind Siliguri automatically. Fonts are self-hosted (`@fontsource`), not loaded from a CDN, so a shop with bad internet still renders correctly. Bangla needs a line-height ≥ 1.6. The scale below already accounts for it.
 
 | Token | Size / line-height | Weight | Use |
 |---|---|---|---|

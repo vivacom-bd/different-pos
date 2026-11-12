@@ -55,7 +55,7 @@ type Row = {
     id: number;
     uuid: string;
     number: string;
-    vendor: string;
+    vendor: string | null;
     vendor_ref: string | null;
     status: string;
     payment_status: string;
@@ -124,7 +124,10 @@ export default function PurchasesIndex({
     const csvColumns: CsvColumn<Row>[] = [
         { header: t('purchases.col_grn'), value: (r) => r.number },
         { header: t('purchases.col_date'), value: (r) => r.purchased_at },
-        { header: t('purchases.vendor'), value: (r) => r.vendor },
+        {
+            header: t('purchases.vendor'),
+            value: (r) => r.vendor ?? t('purchases.no_vendor'),
+        },
         {
             header: t('purchases.col_branch'),
             value: (r) => r.branch?.name ?? '',
@@ -224,7 +227,11 @@ export default function PurchasesIndex({
                 headerKey: 'purchases.vendor',
                 cell: (r) => (
                     <span className="font-semibold text-foreground">
-                        {r.vendor}
+                        {r.vendor ?? (
+                            <span className="font-normal text-muted-foreground">
+                                {t('purchases.no_vendor')}
+                            </span>
+                        )}
                     </span>
                 ),
             },

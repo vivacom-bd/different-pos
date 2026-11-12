@@ -19,7 +19,6 @@ final class ProductLookup
         if ($code === '') {
             return ['exact' => false, 'products' => []];
         }
-        $escaped = addcslashes($code, '\\%_');
 
         $scoped = static fn () => Product::query()->where('is_active', true)
             ->when($only instanceof ProductItemType, static fn ($q) => $q->where('item_type', $only?->value));
@@ -27,7 +26,7 @@ final class ProductLookup
         $exact = $scoped()
             ->where(static fn ($q) => $q->where('barcode', $code)->orWhere('sku', $code))->limit(1)->get();
         $products = $exact->isNotEmpty() ? $exact : $scoped()
-            ->where(static fn ($q) => $q->where('name', 'like', '%'.$escaped.'%')->orWhere('sku', 'like', $escaped.'%'))
+            ->search($code)->orderByCodeMatch($code)
             ->orderBy('name')->limit(8)->get();
         $products->load('unit:id,short_name,allows_decimal');
 

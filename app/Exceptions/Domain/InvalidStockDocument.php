@@ -72,6 +72,11 @@ final class InvalidStockDocument extends DomainException
         return new self(sprintf('Purchase %s belongs to another vendor.', $number));
     }
 
+    public static function vendorlessDue(): self
+    {
+        return new self(__('purchases.vendorless_due'));
+    }
+
     public static function storeCreditPayment(): self
     {
         return new self(__('purchases.store_credit_payment'));

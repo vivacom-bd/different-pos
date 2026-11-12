@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
  * @property string $uuid
  * @property int $tenant_id
  * @property int $branch_id
- * @property int $vendor_id
+ * @property int|null $vendor_id
  * @property string $number
  * @property string|null $vendor_ref
  * @property PurchaseStatus $status

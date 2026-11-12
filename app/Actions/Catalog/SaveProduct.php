@@ -6,6 +6,7 @@ namespace App\Actions\Catalog;
 
 use App\Enums\ProductItemType;
 use App\Enums\ProductType;
+use App\Enums\StockMovementType;
 use App\Exceptions\Domain\InvalidCatalogData;
 use App\Models\Brand;
 use App\Models\Category;
@@ -22,11 +23,16 @@ use App\Support\Catalog\Values;
 use App\Support\Database\Transaction;
 use App\Support\Money\Money;
 use App\Support\Quantity\Quantity;
+use App\Support\Stock\StockLedger;
+use App\Support\Tenancy\TenantContext;
 
 /**
  * Creates or updates a product. SKU is unique per tenant, a barcode is unique and may not start
  * with MC (membership cards); a blank barcode on create gets an auto EAN-13. Family membership is
  * not touched here (see GenerateFamilyVariants / AttachProductToFamily).
+ *
+ * `opening_qty` (create only, stock-tracked, needs stock.adjust) receives that quantity into the current
+ * branch as an opening batch at the product's cost price, through StockLedger in the same transaction.
  *
  * @phpstan-type ProductData array{
  *     name?: string, name_bn?: string|null, sku?: string, barcode?: string|null, hs_code?: string|null,
@@ -35,12 +41,17 @@ use App\Support\Quantity\Quantity;
  *     cost_price?: Money|string, min_sale_price?: Money|string|null,
  *     wholesale_price?: Money|string|null, min_sale_qty?: Quantity|string,
  *     reorder_level?: Quantity|string, track_stock?: bool, image_path?: string|null,
- *     description?: string|null, is_active?: bool
+ *     description?: string|null, is_active?: bool, opening_qty?: Quantity|string|null
  * }
  */
 final readonly class SaveProduct
 {
-    public function __construct(private BarcodeAllocator $barcodes, private SkuAllocator $skus) {}
+    public function __construct(
+        private BarcodeAllocator $barcodes,
+        private SkuAllocator $skus,
+        private StockLedger $ledger,
+        private TenantContext $context,
+    ) {}
 
     /** @param ProductData $data */
     public function handle(User $actor, array $data, ?Product $product = null): Product
@@ -131,10 +142,45 @@ final readonly class SaveProduct
             $product->updated_by = $actor->id;
             $product->save();
 
+            $this->receiveOpeningStock($actor, $product, $created, $data['opening_qty'] ?? null);
+
             Audit::log($created ? 'product.created' : 'product.updated', $product, ['sku' => $sku], $actor);
 
             return $product;
         });
+    }
+
+    private function receiveOpeningStock(User $actor, Product $product, bool $created, Quantity|string|null $raw): void
+    {
+        if ($raw === null || $raw === '') {
+            return;
+        }
+        $qty = Values::quantity($raw);
+        if ($qty->isZero()) {
+            return;
+        }
+        if ($qty->isNegative()) {
+            throw InvalidCatalogData::invalid('Opening stock must not be negative.');
+        }
+        if (! $created) {
+            throw InvalidCatalogData::invalid('Opening stock can only be set when the product is created.');
+        }
+        if (! $product->track_stock) {
+            throw InvalidCatalogData::invalid('Opening stock needs a stock-tracked product.');
+        }
+        if (! $actor->can('stock.adjust')) {
+            throw InvalidCatalogData::invalid('You are not allowed to record opening stock.');
+        }
+
+        $this->ledger->receive(
+            $product,
+            $this->context->branch(),
+            $qty,
+            $product->cost_price,
+            StockMovementType::Opening,
+            null,
+            ['type' => 'products', 'id' => $product->id, 'user_id' => $actor->id, 'note' => 'opening'],
+        );
     }
 
     /** A raw material is a standalone, stock-tracked item that has never been sold. */
@@ -152,7 +198,7 @@ final readonly class SaveProduct
     {
         $taken = Product::withTrashed()->where('sku', $sku)->when($exceptId !== null, fn ($q) => $q->whereKeyNot($exceptId))->exists();
         if ($taken) {
-            throw InvalidCatalogData::duplicate('SKU', $sku);
+            throw InvalidCatalogData::duplicate('product code', $sku);
         }
     }
 

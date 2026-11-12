@@ -137,10 +137,9 @@ final class ReturnController extends Controller
         }
         if ($table->search !== '') {
             $prefix = addcslashes($table->search, '\\%_').'%';
-            $like = '%'.addcslashes($table->search, '\\%_').'%';
             $query->where(fn ($w) => $w->where('number', 'like', $prefix)
                 ->orWhereIn('sale_id', Sale::query()->select('id')->where('number', 'like', $prefix))
-                ->orWhereIn('customer_id', Customer::query()->withTrashed()->select('id')->where(fn ($c) => $c->where('name', 'like', $like)->orWhere('shop_name', 'like', $like))));
+                ->orWhereIn('customer_id', Customer::query()->withTrashed()->select('id')->search($table->search)));
         }
 
         return $query;
@@ -353,18 +352,12 @@ final class ReturnController extends Controller
     private function candidates(string $q): array
     {
         $prefix = addcslashes($q, '\\%_').'%';
-        $like = '%'.addcslashes($q, '\\%_').'%';
-        $digits = preg_replace('/\D+/', '', $q) ?? '';
 
         return array_values(Sale::query()
             ->where('status', SaleStatus::Completed)
             ->whereNotNull('number')
             ->where(fn ($w) => $w->where('number', 'like', $prefix)
-                ->orWhereIn('customer_id', Customer::query()->withTrashed()->select('id')->where(fn ($c) => $c
-                    ->where('name', 'like', $like)
-                    ->orWhere('shop_name', 'like', $like)
-                    ->when(strlen($digits) >= 4, fn ($c) => $c->orWhere('phone', 'like', '%'.$digits))
-                    ->orWhereNumberMatches($digits))))
+                ->orWhereIn('customer_id', Customer::query()->withTrashed()->select('id')->search($q)))
             ->with(['customer' => fn ($c) => $c->withTrashed()])
             ->withCount('items')
             ->latest('sold_at')

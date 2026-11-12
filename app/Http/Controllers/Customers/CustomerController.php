@@ -426,18 +426,7 @@ final class CustomerController extends Controller
     /** @param Builder<Customer> $query */
     private function applySearch(Builder $query, string $term): void
     {
-        $like = '%'.addcslashes($term, '%_\\').'%';
-        $digits = CustomerNumber::normalize($term);
-        $query->where(function (Builder $q) use ($like, $digits): void {
-            $q->where('name', 'like', $like)->orWhere('name_bn', 'like', $like)->orWhere('shop_name', 'like', $like);
-            if (preg_match('/^[0-9]+$/', $digits) === 1) {
-                $q->orWhereNumberMatches($digits);
-                $national = ltrim(str_starts_with($digits, '880') ? substr($digits, 3) : $digits, '0');
-                if (strlen($national) >= 3) {
-                    $q->orWhere('phone', 'like', '%'.$national.'%')->orWhere('alt_phone', 'like', '%'.$national.'%');
-                }
-            }
-        });
+        $query->search($term);
     }
 
     /** @return array<int, array{id: int, name: string, discount_bp: int}> */

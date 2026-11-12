@@ -35,25 +35,21 @@ final class SearchController extends Controller
             return response()->json(['products' => [], 'customers' => [], 'sales' => []]);
         }
         $q = mb_substr($q, 0, 60);
-        $like = '%'.addcslashes($q, '\\%_').'%';
         $prefix = addcslashes($q, '\\%_').'%';
 
         return response()->json([
-            'products' => $user->can('viewAny', Product::class) ? $this->products($like, $prefix) : [],
+            'products' => $user->can('viewAny', Product::class) ? $this->products($q) : [],
             'customers' => $user->can('viewAny', Customer::class) ? $this->customers($q) : [],
             'sales' => $user->can('viewAny', Sale::class) ? $this->sales($prefix) : [],
         ]);
     }
 
     /** @return list<array<string, mixed>> */
-    private function products(string $like, string $prefix): array
+    private function products(string $q): array
     {
         return array_values(Product::query()
             ->where('is_active', true)
-            ->where(fn ($w) => $w->where('name', 'like', $like)
-                ->orWhere('name_bn', 'like', $like)
-                ->orWhere('sku', 'like', $prefix)
-                ->orWhere('barcode', 'like', $prefix))
+            ->search($q)->orderByCodeMatch($q)
             ->orderBy('name')
             ->limit(self::LIMIT)
             ->get()

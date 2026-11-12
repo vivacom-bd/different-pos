@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\Syncable;
+use App\Support\Tenancy\TenantContext;
 use Database\Factories\UnitFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -41,5 +42,21 @@ final class Unit extends Model
             'allows_decimal' => 'boolean',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * The unit new products preselect: the tenant's "default unit" setting when it is still an active unit,
+     * else the active "pcs" unit, else null (callers fall back to the first option).
+     */
+    public static function defaultId(): ?int
+    {
+        $configured = app(TenantContext::class)->tenant()->setting('default_unit_id');
+        if (is_int($configured) && self::query()->whereKey($configured)->where('is_active', true)->exists()) {
+            return $configured;
+        }
+
+        $pcs = self::query()->where('is_active', true)->whereRaw('LOWER(short_name) = ?', ['pcs'])->orderBy('id')->value('id');
+
+        return is_numeric($pcs) ? (int) $pcs : null;
     }
 }

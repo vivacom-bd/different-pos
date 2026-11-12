@@ -55,7 +55,7 @@ describe('ScanField type-ahead', () => {
         fireEvent.change(field(), { target: { value: 'tee' } });
         expect(fetchMock).not.toHaveBeenCalled();
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(300);
+            await vi.advanceTimersByTimeAsync(450);
         });
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -76,14 +76,14 @@ describe('ScanField type-ahead', () => {
 
         fireEvent.change(field(), { target: { value: 't' } });
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(300);
+            await vi.advanceTimersByTimeAsync(450);
         });
         expect(fetchMock).not.toHaveBeenCalled();
 
         fireEvent.change(field(), { target: { value: 'TEE-M' } });
         fireEvent.keyDown(field(), { key: 'Enter' });
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(300);
+            await vi.advanceTimersByTimeAsync(450);
         });
         // Enter cancelled the pending type-ahead: exactly one request, and the product was added.
         expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -95,7 +95,7 @@ describe('ScanField type-ahead', () => {
         render(<ScanField lookupUrl="/x" onPick={onPick} />);
         fireEvent.change(field(), { target: { value: 'tee' } });
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(300);
+            await vi.advanceTimersByTimeAsync(450);
         });
         screen.getByRole('button', { name: /Cotton Tee/ });
         fireEvent.keyDown(field(), { key: 'ArrowDown' });
@@ -122,7 +122,7 @@ describe('ScanField type-ahead', () => {
 
         fireEvent.change(field(), { target: { value: 'tee' } });
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(300);
+            await vi.advanceTimersByTimeAsync(450);
         });
 
         expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
@@ -143,7 +143,7 @@ describe('ScanField type-ahead', () => {
 
         fireEvent.change(field(), { target: { value: 'linen' } });
         await act(async () => {
-            await vi.advanceTimersByTimeAsync(300);
+            await vi.advanceTimersByTimeAsync(450);
         });
         fireEvent.click(screen.getByRole('button', { name: /linen/ }));
 

@@ -20,7 +20,7 @@ use LogicException;
 
 /**
  * Cancels a received purchase of the current branch. Allowed only while every batch it created is
- * untouched (qty_remaining = qty_received) and no payment is allocated to it. The batches are
+ * untouched (qty_remaining = qty_received) and no payment is allocated to it (a vendorless purchase is settled on receipt and has no payment rows). The batches are
  * emptied through the ledger (type purchase, negative qty) and vendors.balance −= total.
  */
 final readonly class CancelPurchase
@@ -61,7 +61,7 @@ final readonly class CancelPurchase
                 }
             }
 
-            $vendor = Vendor::query()->whereKey($purchase->vendor_id)->lockForUpdate()->firstOrFail();
+            $vendor = $purchase->vendor_id === null ? null : Vendor::query()->whereKey($purchase->vendor_id)->lockForUpdate()->firstOrFail();
             $purchase = Purchase::query()->whereKey($purchase->id)->lockForUpdate()->firstOrFail();
             $this->assertCancellable($purchase);
 
@@ -81,8 +81,10 @@ final readonly class CancelPurchase
                 );
             }
 
-            $vendor->balance = $vendor->balance->minus($purchase->due);
-            $vendor->save();
+            if ($vendor instanceof Vendor) {
+                $vendor->balance = $vendor->balance->minus($purchase->due);
+                $vendor->save();
+            }
 
             $purchase->status = PurchaseStatus::Cancelled;
             $purchase->due = Money::zero();
@@ -99,7 +101,7 @@ final readonly class CancelPurchase
             throw InvalidStockDocument::notReceived($purchase->number);
         }
 
-        if (! $purchase->paid->isZero()) {
+        if ($purchase->vendor_id !== null && ! $purchase->paid->isZero()) {
             throw InvalidStockDocument::hasPayments($purchase->number);
         }
     }

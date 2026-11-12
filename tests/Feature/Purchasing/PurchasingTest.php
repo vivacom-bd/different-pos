@@ -313,3 +313,32 @@ it('lets a cancelled or deleted bill release its bill number, and leaves legacy 
     expect(Purchase::query()->where('vendor_ref', 'INV-100')->where('status', PurchaseStatus::Received)->count())->toBe(2)
         ->and(fn () => ($this->receive)(['vendor_ref' => 'INV-100']))->toThrow(DuplicateVendorBill::class);
 });
+
+it('receives a vendorless purchase settled in full without touching any vendor balance', function (): void {
+    $purchase = ($this->receive)(['vendor_id' => null]);
+
+    expect($purchase->vendor_id)->toBeNull()
+        ->and($purchase->paid->paisa)->toBe($purchase->total->paisa)
+        ->and($purchase->due->paisa)->toBe(0)
+        ->and($purchase->payment_status)->toBe(PaymentStatus::Paid)
+        ->and(($this->vendorBalance)())->toBe(0)
+        ->and(($this->onHand)($this->shirt))->toBe('10.000')
+        ->and(Payment::query()->count())->toBe(0);
+});
+
+it('rejects a part payment (a due) on a vendorless purchase and writes nothing', function (): void {
+    expect(fn () => ($this->receive)(['vendor_id' => null, 'payment' => ['amount' => Money::ofPaisa(1000), 'payment_method_id' => $this->method->id]]))
+        ->toThrow(InvalidStockDocument::class, 'without a vendor');
+
+    expect(Purchase::query()->count())->toBe(0)->and(($this->onHand)($this->shirt))->toBeNull();
+});
+
+it('cancels a vendorless purchase and takes its stock back out', function (): void {
+    $purchase = ($this->receive)(['vendor_id' => null]);
+
+    $cancelled = app(CancelPurchase::class)->handle($this->user, $purchase);
+
+    expect($cancelled->status)->toBe(PurchaseStatus::Cancelled)
+        ->and(($this->onHand)($this->shirt))->toBe('0.000')
+        ->and(($this->vendorBalance)())->toBe(0);
+});

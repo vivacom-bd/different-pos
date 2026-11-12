@@ -23,6 +23,7 @@ use App\Models\PaymentAllocation;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Purchase;
+use App\Models\PurchaseItem;
 use App\Models\StockBatch;
 use App\Models\Unit;
 use App\Models\User;
@@ -81,7 +82,7 @@ final class PurchaseController extends Controller
                 'id' => $p->id,
                 'uuid' => $p->uuid,
                 'number' => $p->number,
-                'vendor' => $p->vendor->name ?? '',
+                'vendor' => $p->vendor->name ?? null,
                 'vendor_ref' => $p->vendor_ref,
                 'status' => $p->status->value,
                 'payment_status' => $p->payment_status->value,
@@ -135,7 +136,7 @@ final class PurchaseController extends Controller
             if ($table->search !== '') {
                 $like = '%'.addcslashes($table->search, '\\%_').'%';
                 $query->where(static fn ($q) => $q->where('number', 'like', $like)->orWhere('vendor_ref', 'like', $like)
-                    ->orWhereHas('vendor', static fn ($v) => $v->where('name', 'like', $like)));
+                    ->orWhereHas('vendor', static fn ($v) => $v->search($table->search)));
             }
             if (isset($table->filters['status'])) {
                 $query->where('status', $table->filters['status']);
@@ -189,7 +190,7 @@ final class PurchaseController extends Controller
             $row = [
                 'number' => $p->number,
                 'date' => BusinessDay::localDate($p->purchased_at, $tz),
-                'vendor' => $p->vendor->name ?? '',
+                'vendor' => $p->vendor->name ?? __('purchases.no_vendor'),
                 'branch' => $p->branch instanceof Branch ? $p->branch->name : null,
                 'vendor_ref' => $p->vendor_ref,
                 'items' => (int) $p->getAttribute('items_count'),
@@ -233,7 +234,49 @@ final class PurchaseController extends Controller
         // `type=raw_material|finished` narrows the GRN's segmented filter; anything else searches both kinds.
         $only = ProductItemType::tryFrom((string) $request->query('type', ''));
 
-        return response()->json($lookup->find((string) $request->query('code', ''), $this->actor($request)->can('products.view_cost'), $only));
+        $found = $lookup->find((string) $request->query('code', ''), $this->actor($request)->can('products.view_cost'), $only);
+        $found['products'] = $this->withPurchaseCost($found['products']);
+
+        return response()->json($found);
+    }
+
+    /**
+     * The GRN prefills the unit cost: the current branch's last received purchase cost per unit
+     * (paisa), else the product's cost price. The receiver is entering costs anyway, so this is
+     * independent of `products.view_cost`.
+     *
+     * @param  list<array<string, mixed>>  $products
+     * @return list<array<string, mixed>>
+     */
+    private function withPurchaseCost(array $products): array
+    {
+        $ids = array_map(static fn (array $p): int => (int) $p['id'], $products);
+        if ($ids === []) {
+            return $products;
+        }
+
+        $latest = PurchaseItem::query()
+            ->whereIn('purchase_items.product_id', $ids)
+            ->join('purchases', 'purchases.id', '=', 'purchase_items.purchase_id')
+            ->where('purchases.branch_id', app(TenantContext::class)->branchId())
+            ->where('purchases.tenant_id', app(TenantContext::class)->tenantId())
+            ->where('purchases.status', PurchaseStatus::Received->value)
+            ->whereNull('purchases.deleted_at')
+            ->selectRaw('purchase_items.product_id, max(purchase_items.id) as item_id')
+            ->groupBy('purchase_items.product_id')
+            ->pluck('item_id', 'product_id');
+        $costs = PurchaseItem::query()->whereIn('id', $latest->values()->all())->get(['id', 'unit_cost'])
+            ->mapWithKeys(static fn (PurchaseItem $i): array => [$i->id => $i->unit_cost->paisa]);
+        $fallback = Product::query()->whereIn('id', $ids)->get(['id', 'cost_price'])
+            ->mapWithKeys(static fn (Product $p): array => [$p->id => $p->cost_price->paisa]);
+
+        return array_map(static function (array $p) use ($latest, $costs, $fallback): array {
+            $id = (int) $p['id'];
+            $itemId = $latest->get($id);
+            $p['purchase_cost'] = $itemId !== null ? (int) $costs->get($itemId, 0) : (int) $fallback->get($id, 0);
+
+            return $p;
+        }, $products);
     }
 
     public function store(ReceivePurchaseRequest $request, ReceivePurchase $receive): RedirectResponse
@@ -256,7 +299,7 @@ final class PurchaseController extends Controller
         }
 
         $input = [
-            'vendor_id' => (int) $v['vendor_id'],
+            'vendor_id' => isset($v['vendor_id']) ? (int) $v['vendor_id'] : null,
             'items' => $items,
             'vendor_ref' => $v['vendor_ref'] ?? null,
             'purchased_at' => isset($v['purchased_at']) ? Carbon::parse((string) $v['purchased_at']) : null,
@@ -309,8 +352,8 @@ final class PurchaseController extends Controller
                 'uuid' => $purchase->uuid,
                 'number' => $purchase->number,
                 'vendor_id' => $purchase->vendor_id,
-                'vendor_uuid' => $purchase->vendor->uuid ?? '',
-                'vendor' => $purchase->vendor->name ?? '',
+                'vendor_uuid' => $purchase->vendor->uuid ?? null,
+                'vendor' => $purchase->vendor->name ?? null,
                 'vendor_phone' => $purchase->vendor->phone ?? null,
                 'vendor_balance' => $purchase->vendor instanceof Vendor ? $purchase->vendor->balance->paisa : 0,
                 'vendor_ref' => $purchase->vendor_ref,
@@ -379,6 +422,7 @@ final class PurchaseController extends Controller
     public function pay(PayVendorRequest $request, Purchase $purchase, PayVendor $pay): RedirectResponse
     {
         $this->authorize('view', $purchase);
+        abort_if($purchase->vendor_id === null, 422, __('purchases.vendorless_pay'));
         $amount = Money::ofPaisa((int) $request->validated('amount'));
 
         $this->guarded(fn (): Payment => $pay->handle($this->actor($request), [

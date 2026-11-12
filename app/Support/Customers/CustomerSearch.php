@@ -27,33 +27,13 @@ final readonly class CustomerSearch
         $digits = CustomerNumber::normalize($term);
         $numeric = preg_match('/^[0-9]+$/', $digits) === 1;
 
-        $query = Customer::query()->where('is_walk_in', false);
+        $query = Customer::query()->where('is_walk_in', false)->search($term);
 
-        if ($numeric) {
-            if (strlen($digits) < 3) {
-                return new Collection;
-            }
-            $national = ltrim(str_starts_with($digits, '880') ? substr($digits, 3) : $digits, '0');
-            $query->where(function ($q) use ($digits, $national): void {
-                if (strlen($digits) === 8) {
-                    $q->orWhere('customer_no', (int) $digits);
-                } else {
-                    $q->orWhereNumberMatches($digits);
-                }
-                if (strlen($national) >= 3) {
-                    $q->orWhere('phone', 'like', '%'.$national)->orWhere('alt_phone', 'like', '%'.$national);
-                }
-            });
-            if (strlen($digits) === 8) {
-                $query->orderByRaw('customer_no = ? desc', [(int) $digits]);
-            } elseif (strlen($digits) >= 3) {
-                // A number ending in these digits comes before a phone that does.
-                $query->orderByRaw('customer_no like ? desc', ['%'.$digits]);
-            }
-        } else {
-            $likeRaw = '%'.addcslashes($term, '%_\\').'%';
-            $query->where(fn ($q) => $q->where('name', 'like', $likeRaw)->orWhere('name_bn', 'like', $likeRaw)
-                ->orWhere('shop_name', 'like', $likeRaw));
+        if ($numeric && strlen($digits) >= 3) {
+            // The customer number itself (exact when 8 digits) comes before a phone or name that matches.
+            strlen($digits) === 8
+                ? $query->orderByRaw('customer_no = ? desc', [(int) $digits])
+                : $query->orderByRaw('customer_no like ? desc', ['%'.$digits]);
         }
 
         return $query->orderBy('name')->limit($limit)->get()->map(static fn (Customer $c): CustomerSearchResult => new CustomerSearchResult(

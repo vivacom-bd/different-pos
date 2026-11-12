@@ -56,10 +56,10 @@ type Payment = {
 type Purchase = {
     id: number;
     uuid: string;
-    vendor_uuid: string;
+    vendor_uuid: string | null;
     number: string;
-    vendor_id: number;
-    vendor: string;
+    vendor_id: number | null;
+    vendor: string | null;
     vendor_phone: string | null;
     vendor_balance: number;
     vendor_ref: string | null;
@@ -169,7 +169,9 @@ export default function PurchaseShow({
                             }
                             subtitle={
                                 <>
-                                    {t('purchases.vendor')}: {purchase.vendor}
+                                    {t('purchases.vendor')}:{' '}
+                                    {purchase.vendor ??
+                                        t('purchases.no_vendor')}
                                     {' · '}
                                     <span className="num">
                                         {digits.n(purchase.purchased_at)}
@@ -334,13 +336,19 @@ export default function PurchaseShow({
                             <div className="text-[10px] font-semibold text-muted-foreground uppercase">
                                 {t('purchases.supplier')}
                             </div>
-                            <Link
-                                href={`/app/vendors/${purchase.vendor_uuid}`}
-                                className="text-sm font-bold text-foreground underline-offset-4 hover:underline"
-                                title={t('purchases.open_vendor')}
-                            >
-                                {purchase.vendor}
-                            </Link>
+                            {purchase.vendor_uuid ? (
+                                <Link
+                                    href={`/app/vendors/${purchase.vendor_uuid}`}
+                                    className="text-sm font-bold text-foreground underline-offset-4 hover:underline"
+                                    title={t('purchases.open_vendor')}
+                                >
+                                    {purchase.vendor}
+                                </Link>
+                            ) : (
+                                <span className="text-sm font-bold text-muted-foreground">
+                                    {t('purchases.no_vendor')}
+                                </span>
+                            )}
                             {purchase.vendor_phone ? (
                                 <div className="num text-[10px] text-muted-foreground">
                                     {t('purchases.vendor_phone')}:{' '}

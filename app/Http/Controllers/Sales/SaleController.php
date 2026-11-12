@@ -232,14 +232,8 @@ final class SaleController extends Controller
         };
         if ($table->search !== '') {
             $prefix = addcslashes($table->search, '\\%_').'%';
-            $like = '%'.addcslashes($table->search, '\\%_').'%';
-            $digits = preg_replace('/\D+/', '', $table->search) ?? '';
             $query->where(fn ($w) => $w->where('number', 'like', $prefix)
-                ->orWhereIn('customer_id', Customer::query()->withTrashed()->select('id')->where(fn ($c) => $c
-                    ->where('name', 'like', $like)
-                    ->orWhere('shop_name', 'like', $like)
-                    ->when(strlen($digits) >= 4, fn ($c) => $c->orWhere('phone', 'like', '%'.$digits))
-                    ->orWhereNumberMatches($digits))));
+                ->orWhereIn('customer_id', Customer::query()->withTrashed()->select('id')->search($table->search)));
         }
 
         return $query;

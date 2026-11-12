@@ -109,7 +109,7 @@ export default function PurchaseCreate({
                     ? `${p.name} · ${p.variant_label}`
                     : p.name,
                 sku: p.sku,
-                unit_cost: p.cost_price,
+                unit_cost: p.purchase_cost ?? p.cost_price,
                 item_type: p.item_type ?? 'finished',
                 unit: p.unit ?? null,
             }),
@@ -120,7 +120,7 @@ export default function PurchaseCreate({
             prev.map((l, i) => (i === index ? { ...l, ...patch } : l)),
         );
 
-    const ready = !processing && lines.length > 0 && vendorId !== '';
+    const ready = !processing && lines.length > 0;
     const receive = () =>
         submit('post', '/app/purchases', {
             vendor_id: vendorId === '' ? null : Number(vendorId),
@@ -135,7 +135,7 @@ export default function PurchaseCreate({
                 unit_cost: l.unit_cost,
                 discount: l.discount,
             })),
-            ...(canPay && paid !== null && paid > 0
+            ...(vendorId !== '' && canPay && paid !== null && paid > 0
                 ? {
                       payment: {
                           amount: paid,
@@ -252,6 +252,7 @@ export default function PurchaseCreate({
                         <FormField
                             label={t('purchases.vendor_required')}
                             error={err('vendor_id')}
+                            hint={t('purchases.vendor_optional_hint')}
                         >
                             <VendorPicker
                                 vendors={vendors}
@@ -648,7 +649,11 @@ export default function PurchaseCreate({
                                 <h2 className={SECTION_TITLE}>
                                     {t('purchases.payment_settlement')}
                                 </h2>
-                                {canPay ? (
+                                {vendorId === '' ? (
+                                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                        {t('purchases.vendorless_note')}
+                                    </p>
+                                ) : canPay ? (
                                     <div className="mt-1.5 grid gap-2">
                                         <FormField
                                             label={t(
@@ -732,9 +737,7 @@ export default function PurchaseCreate({
                         <div className="flex items-center gap-3">
                             {!processing && !ready ? (
                                 <output className="text-[11px] font-semibold text-destructive">
-                                    {vendorId === ''
-                                        ? t('purchases.blocked_vendor')
-                                        : t('purchases.blocked_lines')}
+                                    {t('purchases.blocked_lines')}
                                 </output>
                             ) : (
                                 <span className="hidden text-[11px] text-muted-foreground md:inline">

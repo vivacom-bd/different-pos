@@ -86,7 +86,7 @@ Both frameworks could do the job. This choice minimises custom plumbing for keyb
 | `@zxing/browser` | 0.2.1 | camera scan |
 | `uuid` | 14.0.3 | UUIDv7 |
 | `sonner` | 2.0.8 | toasts |
-| `@fontsource-variable/inter`, `@fontsource/hind-siliguri`, `@fontsource/jetbrains-mono` | 5.3.0 | self-hosted fonts |
+| `@fontsource/poppins`, `@fontsource/hind-siliguri`, `@fontsource/jetbrains-mono` | 5.3.0 | self-hosted fonts. Poppins (400/500/600/700) replaces Inter for Latin UI text: Inter made 0 and 8 look alike to users (2026-11-12) |
 | `@sentry/react` | 11.10.0 | client errors |
 | dev: `@testing-library/react` 16.3.3, `fake-indexeddb` 6.2.7, `jsdom` 30.1.3, `@playwright/test` 1.64.1, `@types/*` | | tests/e2e |
 
@@ -345,3 +345,5 @@ Performance budgets:
 - local sale commit < 100 ms
 - dashboard p95 ≤ 400 ms
 - no N+1 (`preventLazyLoading`)
+
+> Tenant setting `default_unit_id` (2026-11-12): `tenants.settings.default_unit_id` (units.id, null = the active `pcs` unit) is saved by `SaveBusinessSettings`, resolved by `Unit::defaultId()` and preselected in the product form. `SaveProduct` takes `opening_qty` (create only; needs `stock.adjust`) and receives it via `StockLedger::receive` (type `opening`).

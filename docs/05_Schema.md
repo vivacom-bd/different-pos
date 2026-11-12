@@ -39,7 +39,7 @@ tenants                                    -- one business (customer of the SaaS
   status VARCHAR(16) DEFAULT 'active'      -- active|suspended  CHECK
   settings JSON                            -- tax_inclusive, backdate_days, customer_pin_policy(off|optional|required; default off; legacy always→required, credit_only→optional),
                                            -- offline_credit_cap (paisa, default 0), offline_login_days (7), lapsed_days, card terms text,
-                                           -- default_credit_limit (paisa, null = no limit), return_days (null = no return window)
+                                           -- default_credit_limit (paisa, null = no limit), return_days (null = no return window), default_unit_id (units.id preselected on new products; null or inactive = the active `pcs` unit)
   branding JSON NULL                       -- white-label (PRD Epic J). Live: logo_path (public disk, tenants/{tenant_id}/logo-{random}.{png|jpg|webp}; Tenant::logoUrl()). Later: display_name, brand_hex
   pin_box_public_key VARCHAR(64)           -- X25519 base64 (sealed-box for offline customer PIN)
   pin_box_secret_key TEXT                  -- encrypted cast
@@ -364,7 +364,7 @@ stock_transfer_items
 
 ```sql
 purchases [tenant][B] SD(draft only)
-  id, uuid UNIQUE, tenant_id, branch_id, vendor_id FK→vendors
+  id, uuid UNIQUE, tenant_id, branch_id, vendor_id NULL FK→vendors   -- NULL = vendorless purchase: settled on receipt (paid = total, due 0), no payable, no vendor balance/ledger; due on it is refused
   number VARCHAR(30), vendor_ref VARCHAR(60) NULL     -- vendor's invoice no; app-enforced unique per tenant+vendor among non-cancelled, non-deleted bills (trim, case-insensitive; no index, legacy duplicates stay)
   status VARCHAR(16)                       -- draft|received|cancelled
   purchased_at TIMESTAMP, received_at TIMESTAMP NULL
@@ -707,3 +707,5 @@ Request
 
 Not migrated: `store_menu`, `store_admin_access_record` (superseded), customer `username/passwd`, `customer_order_list`.
 **Before step 10, record the live DB triggers** (`SHOW TRIGGERS`; the app's own backup omits triggers, so the dump showing none proves nothing; see 00_Legacy_Features §3) so we understand how legacy stock decrement and restock actually worked.
+
+> Opening stock (2026-11-12): creating a simple (non-variant), stock-tracked product with `opening_qty` (milli-units, `stock.adjust` only) receives it into the current branch through `StockLedger::receive` as a `stock_movements.type = opening` movement plus an `opening` FIFO batch at `products.cost_price`, in the same `Transaction::run` as `SaveProduct`. Not allowed on update, for services, untracked products or variant grids. The product form offers only active units (an edited product keeps its own).

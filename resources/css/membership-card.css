@@ -24,7 +24,7 @@
     container-type: inline-size;
     width: var(--mc-width, 100%);
     max-width: 100%;
-    font-family: 'Inter Variable', 'Hind Siliguri', 'Noto Sans Bengali', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Poppins', 'Hind Siliguri', 'Noto Sans Bengali', ui-sans-serif, system-ui, sans-serif;
     line-height: 1.5;
     /* Left-aligned like the mockup even inside a centring <button> wrapper. */
     text-align: left;
@@ -206,7 +206,7 @@
 .mc-number {
     color: var(--mc-gold);
     text-shadow: 0 1px 0 rgb(0 0 0 / 0.6);
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: 'Poppins', ui-monospace, monospace;
     font-size: 5.882cqw;
     font-weight: 800;
     letter-spacing: 0.1em;
@@ -270,7 +270,7 @@
 }
 .mc-valid {
     color: var(--mc-primary-soft);
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: 'Poppins', ui-monospace, monospace;
     font-size: 2.647cqw;
 }
 
@@ -313,13 +313,13 @@
     border-radius: 1.176cqw;
     background: var(--mc-white);
     color: var(--mc-black);
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: 'Poppins', ui-monospace, monospace;
     font-size: 2.941cqw;
     font-style: italic;
 }
 .mc-sig small {
     color: var(--mc-muted);
-    font-family: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif;
     font-size: 2.353cqw;
     font-style: normal;
 }
@@ -338,7 +338,7 @@
     border-radius: 1.176cqw;
     background: var(--mc-white);
     color: var(--mc-black);
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: 'Poppins', ui-monospace, monospace;
     font-size: 3.529cqw;
     font-weight: 700;
 }
@@ -362,7 +362,7 @@
 }
 .mc-barcode div {
     color: var(--mc-black);
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: 'Poppins', ui-monospace, monospace;
     font-size: 2.353cqw;
     font-weight: 600;
     line-height: 1.5;
@@ -386,7 +386,7 @@
     height: 9.2cqw;
 }
 .mc-qr span {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-family: 'Poppins', ui-monospace, monospace;
     font-size: 1.765cqw;
     line-height: 1;
 }

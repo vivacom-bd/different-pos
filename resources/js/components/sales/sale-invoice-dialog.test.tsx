@@ -141,7 +141,7 @@ describe('SaleInvoiceDialog', () => {
         expect(dialog.textContent).toContain(t('sales.outstanding_due'));
         const buttons = footer();
         expect(buttons[0]).toContain(t('sales.return_items'));
-        expect(buttons[1]).toContain(t('sales.print_80'));
+        expect(buttons[1]).toContain(t('sales.print_receipt'));
         expect(buttons[2]).toContain(t('sales.print_a4_tax'));
         expect(buttons.join('|')).not.toContain(t('sales.void'));
         expect(buttons.join('|')).not.toContain(t('sales.resend_sms'));

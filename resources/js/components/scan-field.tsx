@@ -13,6 +13,8 @@ export type ScanProduct = {
     track_stock: boolean;
     /** Paisa; 0 when the user may not see costs. */
     cost_price: number;
+    /** Purchase form only: last received cost in this branch, else the cost price (paisa). */
+    purchase_cost?: number;
     /** Paisa. */
     sale_price: number;
     /** Milli-units on hand at the current branch. */
@@ -100,7 +102,7 @@ export const ScanField = forwardRef<
                     setMessage(t('scan.failed'));
                 }
             }
-        }, 250);
+        }, 400);
     };
 
     const pick = (product: ScanProduct) => {

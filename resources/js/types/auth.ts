@@ -24,6 +24,8 @@ export type Auth = {
     branch_id: number | null;
     /** Display names of the user's roles in the current tenant (sidebar "Active role" card, status bar); optional until the server shares it. */
     roles?: string[];
+    /** The current branch's default receipt paper (null = the device default). */
+    branch_paper?: '80' | '58' | 'a4' | null;
     [key: string]: unknown;
 };
 

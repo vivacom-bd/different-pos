@@ -62,7 +62,7 @@ it('forbids the MC barcode prefix', function (string $barcode): void {
 it('refuses a duplicate SKU or barcode within the tenant', function (): void {
     ($this->save)(['barcode' => '111']);
 
-    expect(fn () => ($this->save)(['barcode' => '222']))->toThrow(InvalidCatalogData::class, 'SKU');
+    expect(fn () => ($this->save)(['barcode' => '222']))->toThrow(InvalidCatalogData::class, 'product code');
     expect(fn () => ($this->save)(['sku' => 'POLO-9', 'barcode' => '111']))->toThrow(InvalidCatalogData::class, 'barcode');
 });
 

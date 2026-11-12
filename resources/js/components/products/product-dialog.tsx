@@ -85,6 +85,10 @@ export type ProductFormOptions = {
     taxRates: { id: number; name: string; rate_bp: number }[];
     vendors: Option[];
     variantOptions: VariantOptionDef[];
+    /** The tenant's default unit (settings), preselected on a new product. */
+    defaultUnitId?: number | null;
+    /** `stock.adjust`: shows the opening stock field when creating. */
+    canOpenStock?: boolean;
 };
 
 type Errors = Record<string, string>;
@@ -113,7 +117,14 @@ function initialState(
             product?.item_type ?? ('finished' as 'finished' | 'raw_material'),
         category_id: product?.category_id ?? null,
         brand_id: product?.brand_id ?? null,
-        unit_id: product?.unit_id ?? options.units[0]?.id ?? null,
+        unit_id:
+            product?.unit_id ??
+            (options.units.some((u) => u.id === options.defaultUnitId)
+                ? (options.defaultUnitId ?? null)
+                : null) ??
+            options.units[0]?.id ??
+            null,
+        opening_qty: 0,
         tax_rate_id: product?.tax_rate_id ?? null,
         default_vendor_id: product?.default_vendor_id ?? null,
         sale_price: product?.sale_price ?? (null as number | null),
@@ -176,6 +187,11 @@ export function ProductDialog({
     );
     const raw = f.item_type === 'raw_material';
     const withVariants = !editing && !raw && variantRows.length > 0;
+    const showOpening =
+        !editing &&
+        !withVariants &&
+        options.canOpenStock === true &&
+        (raw || (f.type === 'standard' && f.track_stock));
     const clearVariants = () =>
         setDraft((d) => ({ ...d, values1: [], values2: [], rows: [] }));
     const [groupOpen, setGroupOpen] = useState(false);
@@ -239,6 +255,7 @@ export function ProductDialog({
         }
         const payload: Record<string, unknown> = {
             ...f,
+            opening_qty: showOpening && f.opening_qty > 0 ? f.opening_qty : null,
             hs_code: f.hs_code || null,
             barcode: withVariants ? null : f.barcode || null,
             // A raw material is bought and stocked, never sold: no retail price, always standard and tracked.
@@ -1227,6 +1244,29 @@ export function ProductDialog({
                                             </p>
                                         )}
                                     </div>
+                                    {showOpening ? (
+                                        <Field
+                                            id="product-opening_qty"
+                                            label={t('products.opening_stock')}
+                                            error={err('opening_qty')}
+                                        >
+                                            <div className="mt-1">
+                                                <QtyStepper
+                                                    id="product-opening_qty"
+                                                    value={f.opening_qty}
+                                                    onChange={(v) =>
+                                                        set('opening_qty', v)
+                                                    }
+                                                    aria-label={t(
+                                                        'products.opening_stock',
+                                                    )}
+                                                />
+                                            </div>
+                                            <p className="mt-1 text-[11px] text-muted-foreground">
+                                                {t('products.opening_stock_hint')}
+                                            </p>
+                                        </Field>
+                                    ) : null}
                                     <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
                                         {f.type === 'standard' && !raw ? (
                                             <label

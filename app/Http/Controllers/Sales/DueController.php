@@ -150,13 +150,7 @@ final class DueController extends Controller
             ->groupBy('customer_id');
         $this->dateRange($query, 'sold_at', $table->filters['from'] ?? null, $table->filters['to'] ?? null, $table->filters['period'] ?? null);
         if ($table->search !== '') {
-            $like = '%'.addcslashes($table->search, '\\%_').'%';
-            $digits = preg_replace('/\D+/', '', $table->search) ?? '';
-            $query->whereIn('customer_id', Customer::query()->withTrashed()->select('id')->where(fn ($c) => $c
-                ->where('name', 'like', $like)
-                ->orWhere('shop_name', 'like', $like)
-                ->when(strlen($digits) >= 4, fn ($c) => $c->orWhere('phone', 'like', '%'.$digits))
-                ->orWhereNumberMatches($digits)));
+            $query->whereIn('customer_id', Customer::query()->withTrashed()->select('id')->search($table->search));
         }
         if (isset($table->filters['group'])) {
             $query->whereIn('customer_id', Customer::query()->withTrashed()->select('id')->where('customer_group_id', (int) $table->filters['group']));

@@ -3,7 +3,10 @@
 @import 'tw-animate-css';
 
 /* Self-hosted fonts (@fontsource): no CDN, so a shop with bad internet still renders. */
-@import '@fontsource-variable/inter';
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
 @import '@fontsource/hind-siliguri/latin-400.css';
 @import '@fontsource/hind-siliguri/bengali-400.css';
 @import '@fontsource/hind-siliguri/bengali-500.css';
@@ -21,13 +24,14 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-    /* Latin falls through to Hind Siliguri for Bangla glyphs automatically. */
+    /* Latin (Poppins; digits 0 and 8 are clearly distinct) falls through to Hind Siliguri for Bangla glyphs automatically. */
     --font-sans:
-        'Inter Variable', 'Hind Siliguri', 'Noto Sans Bengali', ui-sans-serif,
+        'Poppins', 'Hind Siliguri', 'Noto Sans Bengali', ui-sans-serif,
         system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    /* Numbers (amounts, phones, codes) use Poppins too, with tabular figures so columns align (user request 2026-11-12). */
     --font-mono:
-        'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        'Poppins', 'Hind Siliguri', ui-monospace, SFMono-Regular, Menlo, monospace;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -360,6 +364,10 @@
 }
 
 @layer base {
+    .font-mono {
+        font-variant-numeric: tabular-nums slashed-zero;
+    }
+
     * {
         @apply border-border;
     }

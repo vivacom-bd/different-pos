@@ -30,6 +30,8 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 /**
  * Records a received purchase in the current branch: purchase + items, one FIFO batch per stocked
  * line, vendor balance += total, optional immediate payment.
+ * A vendorless purchase (vendor_id null) books no payable and touches no vendor balance: it is settled on receipt
+ * (paid = total, due 0, no payment row), and a part payment (due > 0) is refused.
  *
  * Amounts: line net = unit_cost × qty − line discount; subtotal = Σ line net; tax_total = Σ line tax;
  * total = subtotal − discount + tax_total + shipping. Shipping minus the order discount is prorated
@@ -38,7 +40,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
  *
  * @phpstan-type PurchaseLineInput array{product_id: int, qty: Quantity, unit_cost: Money, discount?: Money, tax_amount?: Money, batch_no?: string|null, expires_at?: CarbonInterface|null}
  * @phpstan-type PurchasePaymentInput array{amount: Money, payment_method_id: int, reference?: string|null}
- * @phpstan-type PurchaseInput array{vendor_id: int, items: list<PurchaseLineInput>, vendor_ref?: string|null, purchased_at?: CarbonInterface|null, discount?: Money, shipping?: Money, note?: string|null, payment?: PurchasePaymentInput|null}
+ * @phpstan-type PurchaseInput array{vendor_id?: int|null, items: list<PurchaseLineInput>, vendor_ref?: string|null, purchased_at?: CarbonInterface|null, discount?: Money, shipping?: Money, note?: string|null, payment?: PurchasePaymentInput|null}
  */
 final readonly class ReceivePurchase
 {
@@ -103,6 +105,11 @@ final readonly class ReceivePurchase
             }
         }
 
+        $vendorless = ($input['vendor_id'] ?? null) === null;
+        if ($vendorless && $payment !== null && $payment['amount']->compareTo($total) < 0) {
+            throw InvalidStockDocument::vendorlessDue();
+        }
+
         // Landed amounts: line net + tax + its share of (shipping − order discount).
         $weights = array_map(static fn (Money $net): int => $net->paisa, $nets);
         if (array_sum($weights) === 0) {
@@ -110,11 +117,11 @@ final readonly class ReceivePurchase
         }
         $shares = $shipping->minus($orderDiscount)->allocate($weights);
 
-        return Transaction::run(function () use ($actor, $input, $lines, $nets, $taxes, $shares, $subtotal, $taxTotal, $total, $orderDiscount, $shipping, $payment): Purchase {
+        return Transaction::run(function () use ($actor, $input, $lines, $nets, $taxes, $shares, $subtotal, $taxTotal, $total, $orderDiscount, $shipping, $payment, $vendorless): Purchase {
             $branch = $this->context->branch();
             $vendorRef = trim((string) ($input['vendor_ref'] ?? ''));
             $vendorRef = $vendorRef === '' ? null : $vendorRef;
-            $vendor = Vendor::query()->findOrFail($input['vendor_id']);
+            $vendor = ($input['vendor_id'] ?? null) === null ? null : Vendor::query()->findOrFail($input['vendor_id']);
             $method = $payment === null ? null : PaymentMethod::query()->findOrFail($payment['payment_method_id']);
             if ($method instanceof PaymentMethod && $method->type->isStoreCredit()) {
                 throw InvalidStockDocument::storeCreditPayment();
@@ -125,10 +132,10 @@ final readonly class ReceivePurchase
 
             // Locking order: document_sequences → branch_stocks → stock_batches → vendors.
             $number = $this->numberer->next('purchase', $branch->id);
-            $paymentNumber = $payment === null ? null : $this->numberer->next('payment', $branch->id);
+            $paymentNumber = $payment === null || $vendorless ? null : $this->numberer->next('payment', $branch->id);
 
             $purchase = Purchase::query()->create([
-                'vendor_id' => $vendor->id,
+                'vendor_id' => $vendor?->id,
                 'number' => $number,
                 'vendor_ref' => $vendorRef,
                 'status' => PurchaseStatus::Received,
@@ -139,9 +146,9 @@ final readonly class ReceivePurchase
                 'tax_total' => $taxTotal,
                 'shipping' => $shipping,
                 'total' => $total,
-                'paid' => Money::zero(),
-                'due' => $total,
-                'payment_status' => $total->isZero() ? PaymentStatus::Paid : PaymentStatus::Unpaid,
+                'paid' => $vendorless ? $total : Money::zero(),
+                'due' => $vendorless ? Money::zero() : $total,
+                'payment_status' => $vendorless || $total->isZero() ? PaymentStatus::Paid : PaymentStatus::Unpaid,
                 'note' => $input['note'] ?? null,
                 'created_by' => $actor->id,
                 'updated_by' => $actor->id,
@@ -181,6 +188,10 @@ final readonly class ReceivePurchase
 
                 $product->cost_price = $unitCost;
                 $product->save();
+            }
+
+            if (! $vendor instanceof Vendor) {
+                return $purchase->refresh();
             }
 
             $vendor = Vendor::query()->whereKey($vendor->id)->lockForUpdate()->firstOrFail();

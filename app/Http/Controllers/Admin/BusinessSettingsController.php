@@ -11,7 +11,9 @@ use App\Http\Controllers\Concerns\TranslatesDomainErrors;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveTenantLogoRequest;
 use App\Models\Tenant;
+use App\Models\Unit;
 use App\Models\User;
+use App\Support\Http\ScopedExists;
 use App\Support\Tenancy\TenantContext;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
@@ -54,11 +56,13 @@ final class BusinessSettingsController extends Controller implements HasMiddlewa
                 'tax_inclusive' => (bool) $tenant->setting('tax_inclusive'),
                 'backdate_days' => (int) $tenant->setting('backdate_days'),
                 'return_days' => $tenant->setting('return_days'),
+                'default_unit_id' => Unit::defaultId(),
                 'default_credit_limit' => $tenant->setting('default_credit_limit'),
                 'customer_pin_policy' => CustomerPinPolicy::fromSetting($tenant->setting('customer_pin_policy'))->value,
                 'offline_credit_cap' => (int) $tenant->setting('offline_credit_cap'),
             ],
             'timezones' => DateTimeZone::listIdentifiers(),
+            'units' => Unit::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'short_name']),
         ]);
     }
 
@@ -77,6 +81,7 @@ final class BusinessSettingsController extends Controller implements HasMiddlewa
             'locale' => ['required', Rule::in(['en', 'bn'])],
             'tax_inclusive' => ['required', 'boolean'],
             'backdate_days' => ['required', 'integer', 'min:0', 'max:365'],
+            'default_unit_id' => ['nullable', 'integer', ScopedExists::in('units')],
             'return_days' => ['nullable', 'integer', 'min:0', 'max:3650'],
             'default_credit_limit' => ['nullable', 'integer', 'min:0'],
             'customer_pin_policy' => ['required', Rule::enum(CustomerPinPolicy::class)],

@@ -69,7 +69,7 @@ it('validates the purchase and refuses another tenant\'s vendor or product', fun
     $mine = CatalogWorld::make();
     $other = CatalogWorld::make();
 
-    $this->actingAs($mine->user)->post('/app/purchases', ['items' => []])->assertSessionHasErrors(['vendor_id', 'items']);
+    $this->actingAs($mine->user)->post('/app/purchases', ['items' => []])->assertSessionHasErrors('items');
     $this->actingAs($mine->user)->post('/app/purchases', [
         'vendor_id' => $other->vendor()->id,
         'items' => [['product_id' => $other->product()->id, 'qty' => 1000, 'unit_cost' => 100]],
@@ -230,4 +230,28 @@ it('answers a duplicate vendor bill number with a field error on the bill number
 
     $world->enter();
     expect(Purchase::query()->count())->toBe(1);
+});
+
+it('returns the last received branch cost, else the cost price, as purchase_cost; vendorless bills list and show', function (): void {
+    $world = CatalogWorld::make();
+    $product = $world->product(['name' => 'Cost Probe', 'sku' => 'CP-1', 'cost_price' => Money::ofPaisa(45000)]);
+
+    $first = $this->actingAs($world->user)->getJson('/app/purchases/lookup?code=CP-1')->assertOk();
+    expect($first->json('products.0.purchase_cost'))->toBe(45000);
+
+    $this->actingAs($world->user)->post('/app/purchases', [
+        'vendor_id' => null,
+        'items' => [['product_id' => $product->id, 'qty' => 2000, 'unit_cost' => 51000]],
+    ])->assertRedirect();
+
+    expect($this->actingAs($world->user)->getJson('/app/purchases/lookup?code=CP-1')->json('products.0.purchase_cost'))->toBe(51000);
+
+    $purchase = Purchase::query()->latest('id')->firstOrFail();
+    expect($purchase->vendor_id)->toBeNull();
+    $this->actingAs($world->user)->get('/app/purchases')->assertOk()->assertInertia(fn ($page) => $page->where('rows.0.vendor', null));
+    $this->actingAs($world->user)->get('/app/purchases/'.$purchase->uuid)->assertOk();
+
+    $other = CatalogWorld::make();
+    $other->product(['name' => 'Foreign', 'sku' => 'CP-1']);
+    expect($this->actingAs($other->user)->getJson('/app/purchases/lookup?code=CP-1')->json('products.0.purchase_cost'))->not->toBe(51000);
 });
