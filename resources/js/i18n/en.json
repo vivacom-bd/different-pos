@@ -2522,7 +2522,8 @@
             "settings": "Settings",
             "audit": "Audit",
             "branches": "Branches",
-            "sms": "WhatsApp & SMS"
+            "sms": "WhatsApp & SMS",
+            "backup": "Backup"
         },
         "perm": {
             "dashboard_view": "See the dashboard",
@@ -2581,7 +2582,11 @@
             "backup_run": "Run backups and download archives"
         },
         "matrix_title": "Permissions matrix",
-        "permission_area": "Permission area"
+        "permission_area": "Permission area",
+        "unsaved_badge": "Unsaved",
+        "reset": "Reset",
+        "save_failed": "The role could not be saved.",
+        "leave_confirm": "You have unsaved permission changes. Leave this page and lose them?"
     },
     "taxes": {
         "title": "Taxes",

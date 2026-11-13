@@ -71,7 +71,7 @@ final readonly class SaveRole
             $isOwner = $role->name === SystemRoles::OWNER;
             if ($permissions !== null && (! $system || ! $isOwner)) {
                 $current = $role->permissions->pluck('name')->map(strval(...))->all();
-                $incoming = array_values($permissions);
+                $incoming = $permissions;
                 $changedSensitive = array_values(array_intersect(array_values(array_unique(array_merge(
                     array_diff($incoming, $current), array_diff($current, $incoming),
                 ))), Permission::SENSITIVE));

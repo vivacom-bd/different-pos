@@ -219,3 +219,33 @@ test('switching branch from the header lands on the dashboard in the new branch'
         page.getByRole('button', { name: 'Switch branch' }),
     ).toContainText('Warehouse');
 });
+
+test('matrix edits stay a draft until Save; Ctrl+S saves all changed roles and Cancel discards', async ({
+    page,
+}) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await open(page, '/app/settings/roles');
+    const box = page.getByRole('checkbox', { name: 'Cashier: Sell at the register' });
+    const before = await box.getAttribute('data-state');
+    await box.click();
+    await expect(page.getByText(/roles? changed/i).first()).toBeVisible();
+    // Nothing saved yet: a reload shows the stored state.
+    await page.reload();
+    await expect(box).toHaveAttribute('data-state', before ?? 'checked');
+
+    await box.click();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(box).toHaveAttribute('data-state', before ?? 'checked');
+
+    await box.click();
+    await page.keyboard.press('Control+s');
+    await expect(page.getByText(/roles? changed/i)).toBeHidden();
+    await page.reload();
+    await expect(box).not.toHaveAttribute('data-state', before ?? 'checked');
+    // Put it back.
+    await box.click();
+    await page.keyboard.press('Control+s');
+    await expect(page.getByText(/roles? changed/i)).toBeHidden();
+    expect(errors).toEqual([]);
+});
