@@ -35,9 +35,9 @@ type Draft = { permissions: string[]; max_discount_pct_bp: number };
 export const sameSet = (a: string[], b: string[]) =>
     a.length === b.length && a.every((p) => b.includes(p));
 
-/** Visible box: a strong border (the default input border is too faint on the surface), checked fill, focus ring. */
+/** HR access-page checkbox: 16px, 1px soft border, small radius, primary fill when checked, thin focus ring. */
 const BOX =
-    "size-5 rounded-[5px] border-2 border-muted-foreground bg-surface shadow-none data-[state=checked]:border-primary data-[state=indeterminate]:border-primary focus-visible:ring-[3px] focus-visible:ring-ring disabled:opacity-60";
+    "size-4 rounded border border-input bg-surface shadow-none transition-colors duration-150 hover:border-primary/60 data-[state=checked]:border-primary data-[state=indeterminate]:border-primary focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50 [&_svg]:size-3";
 
 /** Basis points <-> a percent text with up to two decimals ("12.5"). */
 export const toPercent = (bp: number) => String(bp / 100);
@@ -266,15 +266,15 @@ export function RoleMatrix({
         );
     };
 
-    const cell = "px-2 py-2 text-center";
-    const rowHead = "sticky left-0 z-[1] bg-surface px-3 py-2 text-left";
+    const cell = "px-3 py-2 text-center";
+    const rowHead = "sticky left-0 z-[1] min-w-[220px] bg-surface px-3 py-2 text-left";
 
     return (
         <section
             id="roles"
             tabIndex={-1}
             aria-labelledby="roles-title"
-            className="scroll-mt-4 overflow-hidden rounded-xl border bg-surface shadow-xs outline-none"
+            className="scroll-mt-4 overflow-hidden rounded-lg border border-border bg-surface outline-none"
         >
             <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-surface-sunken p-3">
                 <div>
@@ -340,32 +340,32 @@ export function RoleMatrix({
                 </p>
             ) : null}
             <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-base">
                     <caption className="sr-only">
                         {t("roles.matrix_title")}
                     </caption>
-                    <thead className="border-b bg-surface font-semibold text-muted-foreground">
+                    <thead className="border-b border-border bg-surface-sunken align-bottom">
                         <tr>
-                            <th scope="col" className={cn(rowHead, "py-2.5")}>
+                            <th scope="col" className={cn(rowHead, "bg-surface-sunken py-2 text-sm font-medium text-muted-foreground")}>
                                 {t("roles.permission_area")}
                             </th>
                             {roles.map((role) => (
                                 <th
                                     key={role.id}
                                     scope="col"
-                                    className="min-w-28 px-2 py-2.5 text-center align-bottom"
+                                    className="min-w-[120px] px-3 py-2 text-center align-bottom text-sm font-medium"
                                 >
                                     <div className="text-foreground">
                                         {role.name}
                                     </div>
-                                    <div className="text-[10px] font-normal">
+                                    <div className="text-xs font-normal text-muted-foreground">
                                         {t("roles.users_count", {
                                             n: digits.n(role.users),
                                         })}
                                     </div>
                                     {isDirty(role) ? (
                                         <div className="mt-1 flex flex-col items-center gap-1">
-                                            <span className="rounded-full bg-warning-soft px-2 py-0.5 text-[10px] font-bold text-foreground">
+                                            <span className="rounded-full bg-warning-soft px-2 py-0.5 text-xs font-medium text-foreground">
                                                 {t("roles.unsaved_badge")}
                                             </span>
                                             <div className="flex gap-1">
@@ -403,7 +403,7 @@ export function RoleMatrix({
                             ))}
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-border [&>tr:last-child]:border-0">
                         <tr className="hover:bg-surface-sunken">
                             <th
                                 scope="row"
@@ -554,10 +554,10 @@ function GroupRows({
 
     return (
         <>
-            <tr className="bg-surface-sunken">
+            <tr className="bg-surface-sunken/60">
                 <th
                     scope="row"
-                    className="sticky left-0 z-[1] bg-surface-sunken px-3 py-1.5 text-left text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
+                    className="sticky left-0 z-[1] bg-surface-sunken px-3 py-1.5 text-left text-xs font-semibold tracking-wide text-muted-foreground uppercase"
                 >
                     <span className="flex items-center gap-2">
                         {groupLabel}
@@ -604,7 +604,7 @@ function GroupRows({
                     return (
                         <td
                             key={role.id}
-                            className="bg-surface-sunken px-2 py-1 text-center"
+                            className="px-3 py-1 text-center"
                         >
                             <label
                                 htmlFor={`grp-${role.id}-${group}`}
@@ -632,7 +632,7 @@ function GroupRows({
             {names.map((name) => (
                 <tr
                     key={name}
-                    className="transition-colors hover:bg-surface-sunken"
+                    className="transition-colors hover:bg-surface-sunken/50"
                 >
                     <th
                         scope="row"
@@ -644,7 +644,7 @@ function GroupRows({
                         </span>
                         {/* The technical code helps English-speaking admins; Bangla shows the label only (code on hover). */}
                         {locale === "en" ? (
-                            <span className="font-mono text-[10px] font-normal text-muted-foreground">
+                            <span className="font-mono text-xs font-normal text-subtle-foreground">
                                 {name}
                             </span>
                         ) : null}
@@ -653,7 +653,7 @@ function GroupRows({
                         const disabled = cellLocked(role, name);
 
                         return (
-                            <td key={role.id} className="px-2 py-0 text-center">
+                            <td key={role.id} className="px-3 py-0 text-center">
                                 <label
                                     htmlFor={`perm-${role.id}-${name}`}
                                     className={cn(
