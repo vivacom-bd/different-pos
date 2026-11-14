@@ -1,9 +1,10 @@
+import { randomUuid } from "@/lib/browser";
 import {
     calculateCart,
     type CartTotals,
     type Discount,
-} from '@/engine/pricing';
-import { QTY_SCALE } from '@/engine/quantity';
+} from "@/engine/pricing";
+import { QTY_SCALE } from "@/engine/quantity";
 import type {
     Approval,
     CartLine,
@@ -12,12 +13,12 @@ import type {
     CustomerCard,
     MemberAuthState,
     RegisterSettings,
-} from './types';
+} from "./types";
 
-export const NO_DISCOUNT: Discount = { type: 'none', value: 0 };
+export const NO_DISCOUNT: Discount = { type: "none", value: 0 };
 
 export function newClientUuid(): string {
-    return globalThis.crypto.randomUUID();
+    return randomUuid();
 }
 
 export function emptyCart(uuid: string = newClientUuid()): CartState {
@@ -33,18 +34,18 @@ export function emptyCart(uuid: string = newClientUuid()): CartState {
 }
 
 export type CartAction =
-    | { type: 'add'; items: { variant: CatalogVariant; qty: number }[] }
-    | { type: 'qty'; key: string; qty: number }
-    | { type: 'remove'; key: string }
-    | { type: 'line_discount'; key: string; discount: Discount }
-    | { type: 'order_discount'; discount: Discount }
-    | { type: 'select'; index: number }
-    | { type: 'move'; delta: number }
-    | { type: 'customer'; customer: CustomerCard | null }
-    | { type: 'approval'; approval: Approval | null }
-    | { type: 'member'; member: MemberAuthState | null }
-    | { type: 'load'; state: CartState }
-    | { type: 'clear'; uuid?: string };
+    | { type: "add"; items: { variant: CatalogVariant; qty: number }[] }
+    | { type: "qty"; key: string; qty: number }
+    | { type: "remove"; key: string }
+    | { type: "line_discount"; key: string; discount: Discount }
+    | { type: "order_discount"; discount: Discount }
+    | { type: "select"; index: number }
+    | { type: "move"; delta: number }
+    | { type: "customer"; customer: CustomerCard | null }
+    | { type: "approval"; approval: Approval | null }
+    | { type: "member"; member: MemberAuthState | null }
+    | { type: "load"; state: CartState }
+    | { type: "clear"; uuid?: string };
 
 function lineFrom(variant: CatalogVariant, qty: number): CartLine {
     return {
@@ -71,7 +72,7 @@ const clampIndex = (index: number, length: number): number =>
  */
 export function cartReducer(state: CartState, action: CartAction): CartState {
     switch (action.type) {
-        case 'add': {
+        case "add": {
             const lines = [...state.lines];
             let selected = state.selected;
             for (const { variant, qty } of action.items) {
@@ -93,9 +94,9 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
 
             return { ...state, lines, selected };
         }
-        case 'qty': {
+        case "qty": {
             if (action.qty <= 0) {
-                return cartReducer(state, { type: 'remove', key: action.key });
+                return cartReducer(state, { type: "remove", key: action.key });
             }
 
             return {
@@ -105,7 +106,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
                 ),
             };
         }
-        case 'remove': {
+        case "remove": {
             const lines = state.lines.filter((l) => l.key !== action.key);
 
             return {
@@ -114,7 +115,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
                 selected: clampIndex(state.selected, lines.length),
             };
         }
-        case 'line_discount':
+        case "line_discount":
             return {
                 ...state,
                 lines: state.lines.map((l) =>
@@ -123,14 +124,14 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
                         : l,
                 ),
             };
-        case 'order_discount':
+        case "order_discount":
             return { ...state, orderDiscount: action.discount };
-        case 'select':
+        case "select":
             return {
                 ...state,
                 selected: clampIndex(action.index, state.lines.length),
             };
-        case 'move':
+        case "move":
             return {
                 ...state,
                 selected: clampIndex(
@@ -138,7 +139,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
                     state.lines.length,
                 ),
             };
-        case 'customer':
+        case "customer":
             // A different customer (or the walk-in) starts the PIN step afresh.
             return {
                 ...state,
@@ -149,21 +150,21 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
                         ? state.member
                         : null,
             };
-        case 'member':
+        case "member":
             return { ...state, member: action.member };
-        case 'approval':
+        case "approval":
             return { ...state, approval: action.approval };
-        case 'load':
+        case "load":
             return action.state;
-        case 'clear':
+        case "clear":
             return emptyCart(action.uuid);
     }
 }
 
 /** The pricing engine's input for this bill: the same numbers the server re-prices with. */
 export function cartTotals(
-    state: Pick<CartState, 'lines' | 'orderDiscount' | 'customer'>,
-    settings: Pick<RegisterSettings, 'tax_inclusive' | 'rounding_step'>,
+    state: Pick<CartState, "lines" | "orderDiscount" | "customer">,
+    settings: Pick<RegisterSettings, "tax_inclusive" | "rounding_step">,
 ): CartTotals {
     return calculateCart({
         lines: state.lines.map((l) => ({

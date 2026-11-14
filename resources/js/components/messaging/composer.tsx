@@ -1,3 +1,4 @@
+import { randomUuid } from "@/lib/browser";
 import { Link, router } from "@inertiajs/react";
 import { AlertTriangle, Search, Send, Smartphone, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -109,7 +110,7 @@ export function Composer({
     const area = useRef<HTMLTextAreaElement>(null);
     // Idempotency key, made when the composer opens: a repeated send of the same payload reuses it.
     const sendKey = useRef<BroadcastKey>({
-        key: globalThis.crypto.randomUUID(),
+        key: randomUuid(),
         fingerprint: "",
     });
 
@@ -280,7 +281,7 @@ export function Composer({
                         setBody("");
                         setTemplate("");
                         sendKey.current = {
-                            key: globalThis.crypto.randomUUID(),
+                            key: randomUuid(),
                             fingerprint: "",
                         };
                     },
@@ -453,11 +454,13 @@ export function Composer({
                             <option value="">
                                 {t("sms.hub.template_custom")}
                             </option>
-                            {config.templates.filter((tpl) => tpl.broadcastable).map((tpl) => (
-                                <option key={tpl.key} value={tpl.key}>
-                                    {t(`sms.template.${tpl.key}`)}
-                                </option>
-                            ))}
+                            {config.templates
+                                .filter((tpl) => tpl.broadcastable)
+                                .map((tpl) => (
+                                    <option key={tpl.key} value={tpl.key}>
+                                        {t(`sms.template.${tpl.key}`)}
+                                    </option>
+                                ))}
                         </NativeSelect>
                     </div>
 

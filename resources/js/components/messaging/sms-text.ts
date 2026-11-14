@@ -5,6 +5,8 @@
  * per customer (SendSmsBroadcast / FanOutSmsBroadcast).
  */
 
+import { randomUuid } from '@/lib/browser';
+
 const GSM_BASIC =
     "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?" +
     "¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
@@ -137,7 +139,7 @@ export type BroadcastKey = { key: string; fingerprint: string };
 export function broadcastKey(
     current: BroadcastKey,
     fingerprint: string,
-    make: () => string = () => globalThis.crypto.randomUUID(),
+    make: () => string = () => randomUuid(),
 ): BroadcastKey {
     if (current.fingerprint === "" || current.fingerprint === fingerprint) {
         return { key: current.key, fingerprint };
