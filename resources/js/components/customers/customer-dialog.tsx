@@ -55,7 +55,6 @@ type FormData = {
     geo_upazila_id: number | null;
     geo_union_id: number | null;
     address_line: string;
-    courier_name: string;
     area: string;
     post_code: string;
     dob: string;
@@ -124,7 +123,6 @@ function CustomerDialogBody({
         geo_upazila_id: customer?.geo_upazila_id ?? null,
         geo_union_id: customer?.geo_union_id ?? null,
         address_line: customer?.address_line ?? "",
-        courier_name: customer?.courier_name ?? "",
         area: customer?.area ?? "",
         post_code: customer?.post_code ?? "",
         dob: customer?.dob ?? "",
@@ -473,15 +471,6 @@ function CustomerDialogBody({
                                             "customers.dialog.area_ph",
                                         ),
                                     })}
-                                    {text(
-                                        "courier_name",
-                                        t("customers.dialog.courier_name"),
-                                        {
-                                            placeholder: t(
-                                                "customers.dialog.courier_ph",
-                                            ),
-                                        },
-                                    )}
                                 </div>
                             </Section>
 

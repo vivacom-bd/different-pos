@@ -285,3 +285,16 @@ export function creditMeter(
         over: used > limit,
     };
 }
+
+/** "Require a customer on every sale" is on and none is attached: Pay is blocked (attach with F4). */
+export function payBlockedByNoCustomer(
+    customer: unknown,
+    requireCustomer: boolean,
+): boolean {
+    return requireCustomer && customer === null;
+}
+
+/** After a sale: the done panel (with Print / Chalan) shows only when "print after sale" is on; off goes straight to the next sale. */
+export function showDonePanel(autoPrint: boolean): boolean {
+    return autoPrint;
+}

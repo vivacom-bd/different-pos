@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Actions\Settings\EnsureSystemPaymentMethods;
 use App\Enums\PaymentMethodType;
 use App\Models\Branch;
+use App\Models\Courier;
 use App\Models\Customer;
 use App\Models\PaymentMethod;
 use App\Models\Register;
@@ -75,6 +76,11 @@ final class DatabaseSeeder extends Seeder
                 // Fabric and other raw materials are bought by length or weight.
                 foreach (['m' => 'Metre', 'yd' => 'Yard', 'kg' => 'Kilogram'] as $short => $name) {
                     Unit::query()->firstOrCreate(['short_name' => $short], ['name' => $name, 'allows_decimal' => true, 'is_active' => true]);
+                }
+
+                // Couriers offered in the register's pay dialog (editable under Settings > Couriers).
+                foreach (['Pathao', 'Steadfast', 'RedX', 'Sundarban Courier', 'SA Paribahan', 'Janani Courier'] as $courier) {
+                    Courier::query()->firstOrCreate(['name' => $courier], ['is_default' => false, 'is_active' => true]);
                 }
 
                 if (! Customer::query()->where('is_walk_in', true)->exists()) {

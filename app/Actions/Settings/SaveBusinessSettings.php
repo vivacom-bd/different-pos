@@ -19,7 +19,7 @@ final readonly class SaveBusinessSettings
 {
     private const array PROFILE = ['name', 'legal_name', 'vat_bin', 'vat_registered_address', 'phone', 'email', 'address', 'currency', 'timezone', 'locale'];
 
-    private const array SETTINGS = ['tax_inclusive', 'backdate_days', 'return_days', 'default_unit_id', 'default_credit_limit', 'customer_pin_policy', 'offline_credit_cap'];
+    private const array SETTINGS = ['tax_inclusive', 'backdate_days', 'return_days', 'default_unit_id', 'default_credit_limit', 'customer_pin_policy', 'offline_credit_cap', 'require_customer_on_sale'];
 
     /** @param array<string, mixed> $data */
     public function handle(User $actor, array $data): Tenant
@@ -66,7 +66,7 @@ final readonly class SaveBusinessSettings
     private function setting(string $key, mixed $value): mixed
     {
         return match ($key) {
-            'tax_inclusive' => (bool) $value,
+            'tax_inclusive', 'require_customer_on_sale' => (bool) $value,
             'customer_pin_policy' => is_string($value) && CustomerPinPolicy::tryFrom($value) instanceof CustomerPinPolicy ? $value : throw InvalidAdminData::invalid('Unknown customer PIN policy.'),
             'backdate_days', 'offline_credit_cap' => $this->whole($value, false),
             'default_unit_id' => $this->unit($value),

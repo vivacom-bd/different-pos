@@ -37,7 +37,7 @@ tenants                                    -- one business (customer of the SaaS
   phone VARCHAR(20) NULL, email VARCHAR(150) NULL, address VARCHAR(500) NULL
   currency CHAR(3) DEFAULT 'BDT', timezone VARCHAR(64) DEFAULT 'Asia/Dhaka', locale VARCHAR(5) DEFAULT 'en'
   status VARCHAR(16) DEFAULT 'active'      -- active|suspended  CHECK
-  settings JSON                            -- tax_inclusive, backdate_days, customer_pin_policy(off|optional|required; default off; legacy always→required, credit_only→optional),
+  settings JSON                            -- tax_inclusive, backdate_days, require_customer_on_sale (bool, default true: the online register refuses a walk-in sale with 422 `customer_required`; a synced device sale is accepted and flagged `customer_missing`), customer_pin_policy(off|optional|required; default off; legacy always→required, credit_only→optional),
                                            -- offline_credit_cap (paisa, default 0), offline_login_days (7), lapsed_days, card terms text,
                                            -- default_credit_limit (paisa, null = no limit), return_days (null = no return window), default_unit_id (units.id preselected on new products; null or inactive = the active `pcs` unit)
   branding JSON NULL                       -- white-label (PRD Epic J). Live: logo_path (public disk, tenants/{tenant_id}/logo-{random}.{png|jpg|webp}; Tenant::logoUrl()). Later: display_name, brand_hex
@@ -52,7 +52,7 @@ branches  [tenant]  SD
   name VARCHAR(150), phone VARCHAR(20) NULL, address VARCHAR(500) NULL
   logo_path VARCHAR(255) NULL
   receipt_header VARCHAR(500) NULL, receipt_footer VARCHAR(500) NULL
-  settings JSON                            -- allow_negative_stock, batch_selection(auto|manual), cash_rounding, auto_print, paper(80|58|a4)
+  settings JSON                            -- allow_negative_stock, batch_selection(auto|manual), cash_rounding, auto_print ("print after each sale": on = receipt window + done panel, off = cart cleared and scan field focused for the next sale; reprint stays in sales history), paper(80|58|a4)
   is_active BOOL DEFAULT 1
   legacy_id, created_at, updated_at, deleted_at
   UNIQUE(tenant_id, code)
@@ -208,7 +208,6 @@ customers [tenant] SD
   area VARCHAR(150) NULL                   -- free text (market/para/road), autocompleted from tenant's existing values
   post_code CHAR(4) NULL
   address_line VARCHAR(500) NULL           -- house/road/holding; legacy free-text address lands here
-  courier_name VARCHAR(80) NULL            -- default courier (free text); printed in the invoice/receipt customer block
   location_verified BOOL DEFAULT 1         -- 0 when auto-parsed from legacy text
   -- membership & PIN
   pin_hash VARCHAR(255) NULL               -- argon2id; NEVER serialised (hidden), never synced
@@ -441,7 +440,7 @@ sales [tenant][B]
   returned_total BIGINT DEFAULT 0
   cogs_total BIGINT DEFAULT 0
   payment_status VARCHAR(16)               -- unpaid|partial|paid
-  courier_name VARCHAR(100) NULL, courier_tracking VARCHAR(100) NULL
+  courier_name VARCHAR(100) NULL, courier_tracking VARCHAR(100) NULL  -- courier picked per sale in the register pay dialog from the active `couriers` (free text, trimmed, cut to 100 for a synced sale, never a rejection); printed as "Courier: X" on A4 + thermal
   public_token CHAR(32) UNIQUE NULL        -- /r/{token}
   buyer_vat_bin VARCHAR(20) NULL           -- snapshot of customer BIN at sale time
   -- offline / device provenance
@@ -455,7 +454,7 @@ sales [tenant][B]
   member_auth_by NULL FK→users             -- manager on override
   member_pin_box TEXT NULL                 -- sealed-box ciphertext; NULLed after verification
   membership_card_id NULL FK→membership_cards   -- card used, if scanned
-  sync_flags JSON NULL                     -- ["price_mismatch","oversold","member_unverified","customer_merged"]
+  sync_flags JSON NULL                     -- ["price_mismatch","oversold","member_unverified","customer_merged","customer_missing"]
   sync_flags_ack_by NULL FK→users, sync_flags_ack_at TIMESTAMP NULL
   client_totals JSON NULL                  -- device-computed totals kept when price_mismatch
   note TEXT NULL

@@ -50,6 +50,7 @@ final class StoreSaleRequest extends FormRequest
             'approval_token' => ['nullable', 'string', 'max:2000'],
             'member_token' => ['nullable', 'string', 'max:2000'],
             'note' => ['nullable', 'string', 'max:500'],
+            'courier_name' => ['nullable', 'string', 'max:100'],
         ];
     }
 
@@ -79,6 +80,7 @@ final class StoreSaleRequest extends FormRequest
             expectedTotal: Money::ofPaisa($this->integer('expected_total')),
             clientUuid: (string) $this->validated('client_uuid'),
             approver: $approver,
+            courierName: $this->filled('courier_name') ? trim((string) $this->validated('courier_name')) : null,
             memberVerified: $memberVerified,
         );
     }

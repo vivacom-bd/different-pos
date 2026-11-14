@@ -60,7 +60,6 @@ export type CustomerDetail = {
     credit_limit: number | null;
     balance: number;
     address_line: string | null;
-    courier_name: string | null;
     area: string | null;
     post_code: string | null;
     geo_division_id: number | null;

@@ -39,7 +39,7 @@ use Picqer\Barcode\BarcodeGeneratorSVG;
  * drops the customer's phone, number and BIN.
  *
  * @phpstan-type Shop array{name: string, logo_url: string|null, legal_name: string|null, vat_bin: string|null, address: string|null, phone: string|null, branch: string, branch_address: string|null, branch_phone: string|null, header: string|null, footer: string|null}
- * @phpstan-type Party array{name: string, shop_name: string|null, customer_no: string|null, phone: string|null, vat_bin: string|null, address: string|null, courier_name: string|null}
+ * @phpstan-type Party array{name: string, shop_name: string|null, customer_no: string|null, phone: string|null, vat_bin: string|null, address: string|null}
  * @phpstan-type Row array{label: string, value: string, strong?: bool}
  */
 final readonly class ReceiptBuilder
@@ -47,7 +47,7 @@ final readonly class ReceiptBuilder
     public function __construct(private TenantContext $context) {}
 
     /**
-     * @return array{kind: 'sale', locale: string, shop: Shop, number: string, date: string, cashier: string|null, voided: bool, void_reason: string|null, customer: Party|null, lines: list<array{name: string, sku: string, qty: string, unit_price: string, discount: string|null, vat_rate: string|null, total: string}>, totals: list<Row>, payments: list<array{method: string, amount: string, reference: string|null, date: string}>, vat_summary: list<array{rate: string, taxable: string, tax: string}>, barcode: string, qr: string|null, public_url: string|null, exchange: array{return: string, credit: string}|null}
+     * @return array{kind: 'sale', locale: string, shop: Shop, number: string, date: string, cashier: string|null, courier: string|null, voided: bool, void_reason: string|null, customer: Party|null, lines: list<array{name: string, sku: string, qty: string, unit_price: string, discount: string|null, vat_rate: string|null, total: string}>, totals: list<Row>, payments: list<array{method: string, amount: string, reference: string|null, date: string}>, vat_summary: list<array{rate: string, taxable: string, tax: string}>, barcode: string, qr: string|null, public_url: string|null, exchange: array{return: string, credit: string}|null}
      */
     public function sale(Sale $sale, string $locale, bool $public = false): array
     {
@@ -116,6 +116,7 @@ final readonly class ReceiptBuilder
             'number' => (string) $sale->number,
             'date' => $this->date($sale->sold_at, $locale),
             'cashier' => $sale->soldBy?->name,
+            'courier' => $sale->courier_name !== null && trim($sale->courier_name) !== '' ? $sale->courier_name : null,
             'voided' => $sale->status === SaleStatus::Voided,
             'void_reason' => $public ? null : $sale->void_reason,
             'customer' => $this->party($sale->customer, $public, $sale->buyer_vat_bin, $locale),
@@ -374,7 +375,6 @@ final readonly class ReceiptBuilder
             'phone' => $public ? null : $customer->phone,
             'vat_bin' => $public ? null : ($bin ?? $customer->vat_bin),
             'address' => $public ? null : $this->address($customer, $locale),
-            'courier_name' => $public ? null : ($customer->courier_name !== null && trim($customer->courier_name) !== '' ? $customer->courier_name : null),
         ];
     }
 

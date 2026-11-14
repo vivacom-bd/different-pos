@@ -8,6 +8,7 @@ use App\Enums\CustomerPinPolicy;
 use App\Enums\PaymentMethodType;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Courier;
 use App\Models\Customer;
 use App\Models\PaymentMethod;
 use App\Models\Register;
@@ -54,6 +55,7 @@ final class RegisterController extends Controller
                     'type' => $m->type->value,
                     'requires_reference' => $m->requires_reference,
                 ])->values()->all(),
+            'couriers' => Courier::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('name')->pluck('name')->values()->all(),
             'categories' => Category::query()->where('is_active', true)->whereNull('parent_id')->orderBy('sort_order')->orderBy('name')
                 ->limit(30)->get(['id', 'name', 'name_bn'])
                 ->map(static fn (Category $c): array => ['id' => $c->id, 'name' => $c->name, 'name_bn' => $c->name_bn])->values()->all(),
@@ -61,6 +63,7 @@ final class RegisterController extends Controller
                 'tax_inclusive' => (bool) $tenant->setting('tax_inclusive'),
                 'rounding_step' => (int) $branch->setting('cash_rounding'),
                 'backdate_days' => (int) $tenant->setting('backdate_days'),
+                'require_customer' => (bool) $tenant->setting('require_customer_on_sale'),
                 'auto_print' => (bool) $branch->setting('auto_print'),
                 'paper' => (string) $branch->setting('paper'),
                 'allow_negative_stock' => (bool) $branch->setting('allow_negative_stock'),

@@ -108,8 +108,8 @@ it('does not open another branch\'s receipt', function (): void {
     $this->actingAs($this->world->user('Cashier'))->get(route('sales.receipt', $other->id))->assertNotFound();
 });
 
-it('prints the customer block (name, shop, phone, address, courier, card no.) on A4 and thermal', function (): void {
-    $this->customer->update(['address_line' => 'Holding 7, Mirpur', 'courier_name' => 'Sundarban Courier']);
+it('prints the customer block (name, shop, phone, address, card no.) on A4 and thermal', function (): void {
+    $this->customer->update(['address_line' => 'Holding 7, Mirpur']);
 
     foreach (['a4', '80'] as $paper) {
         $this->actingAs($this->world->user('Cashier'))->get(route('sales.receipt', [$this->sale->id, 'paper' => $paper, 'lang' => 'en']))
@@ -118,14 +118,6 @@ it('prints the customer block (name, shop, phone, address, courier, card no.) on
             ->assertSee('Rahim Store')
             ->assertSee('+8801711000111')
             ->assertSee('Holding 7, Mirpur')
-            ->assertSee('Sundarban Courier')
             ->assertSee('1000 0016');
     }
-});
-
-it('omits the courier line when empty', function (): void {
-    $this->actingAs($this->world->user('Cashier'))->get(route('sales.receipt', [$this->sale->id, 'paper' => '80', 'lang' => 'en']))
-        ->assertOk()
-        ->assertSee('Address: House 9, Road 4')
-        ->assertDontSee('Courier:');
 });

@@ -17,6 +17,7 @@ return [
         'invalid_quantity' => 'A quantity is not valid.',
         'invalid_money' => 'An amount is not valid.',
         'member_pin_required' => 'This customer must enter their PIN (or a manager must override) before the sale completes.',
+        'customer_required' => 'Attach a customer to this sale before completing it.',
     ],
     'approval' => [
         'invalid' => 'Wrong login or password.',

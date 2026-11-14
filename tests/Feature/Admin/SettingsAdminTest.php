@@ -35,19 +35,20 @@ it('shows and updates the business profile and rules', function (): void {
     [$owner, $tenant] = adminActor();
 
     $this->actingAs($owner)->get('/app/settings/business')->assertOk()->assertInertia(fn (Assert $page) => $page
-        ->component('settings/business')->where('business.slug', $tenant->slug)->where('business.tax_inclusive', true));
+        ->component('settings/business')->where('business.slug', $tenant->slug)->where('business.tax_inclusive', true)->where('business.require_customer_on_sale', false));
 
     $this->put('/app/settings/business', [
         'name' => 'Different Fashion', 'legal_name' => 'Different Fashion Ltd', 'vat_bin' => '000123456-0101', 'phone' => '01712345678',
         'currency' => 'bdt', 'timezone' => 'Asia/Dhaka', 'locale' => 'bn', 'tax_inclusive' => false, 'backdate_days' => 7,
-        'return_days' => 14, 'default_credit_limit' => 5_000_000, 'customer_pin_policy' => 'required', 'offline_credit_cap' => 200_000,
+        'return_days' => 14, 'default_credit_limit' => 5_000_000, 'customer_pin_policy' => 'required', 'offline_credit_cap' => 200_000, 'require_customer_on_sale' => false,
     ])->assertRedirect();
 
     $tenant->refresh();
     expect($tenant->name)->toBe('Different Fashion')->and($tenant->currency)->toBe('BDT')->and($tenant->locale)->toBe('bn')
         ->and($tenant->setting('tax_inclusive'))->toBeFalse()->and($tenant->setting('backdate_days'))->toBe(7)
         ->and($tenant->setting('return_days'))->toBe(14)->and($tenant->setting('default_credit_limit'))->toBe(5_000_000)
-        ->and($tenant->setting('customer_pin_policy'))->toBe('required')->and($tenant->setting('lapsed_days'))->toBe(90);
+        ->and($tenant->setting('customer_pin_policy'))->toBe('required')->and($tenant->setting('lapsed_days'))->toBe(90)
+        ->and($tenant->setting('require_customer_on_sale'))->toBeFalse();
 });
 
 it('treats empty limits as no limit and rejects bad business input', function (): void {

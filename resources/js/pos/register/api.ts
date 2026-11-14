@@ -177,6 +177,7 @@ export function saleBody(
     tenders: readonly TenderRow[],
     expectedTotal: number,
     registerId: number | null,
+    courier: string | null = null,
 ) {
     return {
         client_uuid: state.clientUuid,
@@ -202,6 +203,7 @@ export function saleBody(
                 ? state.approval.token
                 : null,
         member_token: memberTokenFor(state.customer, state.member),
+        courier_name: courier !== null && courier.trim() !== '' ? courier.trim() : null,
     };
 }
 

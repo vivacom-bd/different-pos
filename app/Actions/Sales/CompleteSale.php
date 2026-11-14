@@ -20,6 +20,7 @@ use App\Events\SaleCompleted;
 use App\Exceptions\Domain\BackdateNotAllowed;
 use App\Exceptions\Domain\BelowCostSale;
 use App\Exceptions\Domain\CreditLimitExceeded;
+use App\Exceptions\Domain\CustomerRequired;
 use App\Exceptions\Domain\DiscountCapExceeded;
 use App\Exceptions\Domain\InvalidSaleDocument;
 use App\Exceptions\Domain\InvalidTender;
@@ -158,6 +159,13 @@ final readonly class CompleteSale
         }
 
         $flags = [];
+        if ($customer->is_walk_in && $exchangeValue === null && (bool) $this->context->tenant()->setting('require_customer_on_sale')) {
+            // The online register refuses; a synced offline sale already happened, so it is flagged instead.
+            if ($origin === SaleOrigin::Web) {
+                throw CustomerRequired::forSale();
+            }
+            $flags[] = 'customer_missing';
+        }
         $memberAuth = $this->memberAuth($actor, $draft, $customer, $origin, $flags);
         $clientTotals = null;
         if ($draft->expectedTotal instanceof Money && ! $draft->expectedTotal->equals($total)) {
@@ -330,7 +338,7 @@ final readonly class CompleteSale
             'returned_total' => Money::zero(),
             'cogs_total' => Money::zero(),
             'payment_status' => $total->isZero() ? PaymentStatus::Paid : PaymentStatus::Unpaid,
-            'courier_name' => $prepared->draft->courierName,
+            'courier_name' => $this->courier($prepared->draft->courierName),
             'courier_tracking' => $prepared->draft->courierTracking,
             'public_token' => Str::random(32),
             'buyer_vat_bin' => $prepared->customer->is_walk_in ? null : $prepared->customer->vat_bin,
@@ -490,6 +498,14 @@ final readonly class CompleteSale
                 ], $actor);
             }
         }
+    }
+
+    /** Courier text as typed: trimmed, blank = none, cut to the column so a synced sale is never rejected for it. */
+    private function courier(?string $name): ?string
+    {
+        $name = trim((string) $name);
+
+        return $name === '' ? null : mb_substr($name, 0, 100);
     }
 
     /** @return list<Product> one per draft line */

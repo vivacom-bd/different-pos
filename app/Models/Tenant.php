@@ -52,6 +52,7 @@ final class Tenant extends Model
     public const array DEFAULT_SETTINGS = [
         'tax_inclusive' => true,
         'backdate_days' => 3,
+        'require_customer_on_sale' => true, // a sale needs a named customer (no walk-in); offline sales without one are flagged
         'customer_pin_policy' => 'off', // off|optional|required (App\Enums\CustomerPinPolicy)
         'offline_credit_cap' => 0,         // paisa
         'offline_login_days' => 7,

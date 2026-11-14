@@ -518,7 +518,6 @@ final class CustomerController extends Controller
             'credit_limit' => $c->credit_limit?->paisa,
             'balance' => $c->balance->paisa,
             'address_line' => $c->address_line,
-            'courier_name' => $c->courier_name,
             'area' => $c->area,
             'post_code' => $c->post_code,
             'geo_division_id' => $c->geo_division_id,

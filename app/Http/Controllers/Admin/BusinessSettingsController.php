@@ -60,6 +60,7 @@ final class BusinessSettingsController extends Controller implements HasMiddlewa
                 'default_credit_limit' => $tenant->setting('default_credit_limit'),
                 'customer_pin_policy' => CustomerPinPolicy::fromSetting($tenant->setting('customer_pin_policy'))->value,
                 'offline_credit_cap' => (int) $tenant->setting('offline_credit_cap'),
+                'require_customer_on_sale' => (bool) $tenant->setting('require_customer_on_sale'),
             ],
             'timezones' => DateTimeZone::listIdentifiers(),
             'units' => Unit::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'short_name']),
@@ -86,6 +87,7 @@ final class BusinessSettingsController extends Controller implements HasMiddlewa
             'default_credit_limit' => ['nullable', 'integer', 'min:0'],
             'customer_pin_policy' => ['required', Rule::enum(CustomerPinPolicy::class)],
             'offline_credit_cap' => ['required', 'integer', 'min:0'],
+            'require_customer_on_sale' => ['sometimes', 'boolean'],
         ]);
 
         $user = $request->user();

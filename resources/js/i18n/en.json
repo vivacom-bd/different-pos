@@ -1341,8 +1341,6 @@
             "name_en_ph": "e.g. Asif Mahmud",
             "name_bn": "Full Name (বাংলা)",
             "name_bn_ph": "e.g. আসিফ মাহমুদ",
-            "courier_name": "Default courier",
-            "courier_ph": "e.g. Sundarban Courier (Optional)",
             "shop_ph": "e.g. Moon Fashion House (Optional)",
             "phone": "Primary Mobile Number (SMS)",
             "phone_hint": "Format: 11 digits starting with 013, 014, 015, 016, 017, 018, 019",
@@ -2377,7 +2375,7 @@
         "cash_rounding": "Cash rounding step",
         "cash_rounding_hint": "0 means no rounding.",
         "allow_negative_stock": "Allow selling below zero stock",
-        "auto_print": "Print the receipt automatically",
+        "auto_print": "Print after each sale (off: go straight to the next sale)",
         "staff_count": "{{n}} staff"
     },
     "business": {
@@ -2422,6 +2420,8 @@
         "regional_hint": "Default language, time zone and currency for the whole business.",
         "sales_hint": "Return window, back-dating, VAT pricing and customer credit.",
         "tax_inclusive_hint": "When on, shelf prices already include VAT.",
+        "require_customer_on_sale": "Require a customer on every sale",
+        "require_customer_on_sale_hint": "When on, the register cannot complete a sale without an attached customer (no walk-in).",
         "credit_terms": "Customer due & credit terms",
         "pin_section": "Customer Security PIN Policy",
         "pin_section_hint": "Prevent unauthorized customer due additions and fraudulent loyalty reward claims",
@@ -2758,6 +2758,7 @@
             "col_disc": "Discount",
             "col_vat": "VAT",
             "col_total": "Line total",
+            "col_available": "Available",
             "empty_hint": "Scan a barcode, type a name (F2) or browse the catalogue (Alt+G)."
         },
         "totals": {
@@ -2856,6 +2857,8 @@
             "full_credit": "Full credit sale (nothing paid)",
             "attach_for_due": "Attach a customer to sell on due (F4)",
             "attach": "Attach (F4)",
+            "courier": "Courier (optional)",
+            "courier_none": "No courier",
             "complete_due": "Confirm Partial / Due Sale",
             "complete_print": "Complete Sale & Print Receipt"
         },
@@ -2962,6 +2965,7 @@
             "no_customer": "Attach a customer first (F4).",
             "policy_off": "The customer PIN policy is off for this business.",
             "required_to_pay": "This member must enter their PIN (or a manager must override) before paying.",
+            "customer_required": "Attach a customer before paying (F4).",
             "action": "Member PIN",
             "chip_verified": "✓ PIN",
             "chip_override": "Override by {{name}}",
@@ -3049,6 +3053,7 @@
         "flag_price_mismatch": "Price mismatch",
         "flag_oversold": "Oversold",
         "flag_member_unverified": "Member unverified",
+        "flag_customer_missing": "No customer attached",
         "flag_customer_merged": "Customer merged",
         "hotkey_print": "Print 80 mm receipt",
         "hotkey_print58": "Print 58 mm receipt",

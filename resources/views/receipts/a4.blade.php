@@ -10,6 +10,7 @@
             <div class="title" style="font-size: 1.6em;">{{ __('receipts.tax_invoice') }}</div>
             <div>{{ __('receipts.invoice_no') }}: <span class="num strong">{{ $r['number'] }}</span></div>
             <div>{{ __('receipts.date') }}: <span class="num">{{ $r['date'] }}</span></div>
+            @if ($r['courier'])<div>{{ __('receipts.courier') }}: {{ $r['courier'] }}</div>@endif
             @if ($r['cashier'])<div>{{ __('receipts.cashier') }}: {{ $r['cashier'] }}</div>@endif
             <div class="codes" style="text-align: right;">{!! $r['barcode'] !!}</div>
         </div>

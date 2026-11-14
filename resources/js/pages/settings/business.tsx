@@ -29,6 +29,7 @@ type Business = {
     default_credit_limit: number | null;
     customer_pin_policy: string;
     offline_credit_cap: number;
+    require_customer_on_sale: boolean;
     logo_url: string | null;
 };
 
@@ -75,6 +76,7 @@ export default function BusinessSettings({
         default_credit_limit: business.default_credit_limit as number | null,
         customer_pin_policy: business.customer_pin_policy,
         offline_credit_cap: business.offline_credit_cap,
+        require_customer_on_sale: business.require_customer_on_sale,
     });
     const errors = form.errors as Record<string, string | undefined>;
 
@@ -259,6 +261,16 @@ export default function BusinessSettings({
                                 checked={form.data.tax_inclusive}
                                 onChange={(v) =>
                                     form.setData('tax_inclusive', v)
+                                }
+                            />
+                            <HubToggle
+                                label={t('business.require_customer_on_sale')}
+                                description={t(
+                                    'business.require_customer_on_sale_hint',
+                                )}
+                                checked={form.data.require_customer_on_sale}
+                                onChange={(v) =>
+                                    form.setData('require_customer_on_sale', v)
                                 }
                             />
                             <FormField

@@ -13,6 +13,7 @@
     @endif
     <div class="row"><span>{{ __('receipts.invoice_no') }}</span><span class="num strong">{{ $r['number'] }}</span></div>
     <div class="row"><span>{{ __('receipts.date') }}</span><span class="num">{{ $r['date'] }}</span></div>
+    @if ($r['courier'])<div class="row"><span>{{ __('receipts.courier') }}</span><span>{{ $r['courier'] }}</span></div>@endif
     @if ($r['cashier'])<div class="row"><span>{{ __('receipts.cashier') }}</span><span>{{ $r['cashier'] }}</span></div>@endif
     @include('receipts._customer')
     <hr>

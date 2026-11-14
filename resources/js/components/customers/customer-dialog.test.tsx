@@ -114,7 +114,6 @@ const existing: CustomerDetail = {
     credit_limit: 1000000,
     balance: 0,
     address_line: "Holding 42",
-    courier_name: "Sundarban Courier",
     area: "Kalai",
     post_code: "5930",
     geo_division_id: null,

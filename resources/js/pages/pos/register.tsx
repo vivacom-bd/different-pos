@@ -65,6 +65,7 @@ import {
     payBlockedByPin,
     type MemberStep,
 } from '@/pos/register/member-auth';
+import { payBlockedByNoCustomer, showDonePanel } from '@/pos/register/present';
 import { DiscountDialog } from '@/pos/register/components/discount-dialog';
 import { HeldDialog } from '@/pos/register/components/held-dialog';
 import { ManagerDialog } from '@/pos/register/components/manager-dialog';
@@ -121,6 +122,7 @@ type Props = {
     discountCapBp: number;
     customer: CustomerCard | null;
     receiptAvailable: boolean;
+    couriers: string[];
 };
 
 type DialogName =
@@ -455,9 +457,12 @@ export default function Register(props: Props) {
         }
     };
 
-    const pay = async (tenders: TenderRow[]): Promise<PosError | null> => {
+    const pay = async (
+        tenders: TenderRow[],
+        courier: string | null = null,
+    ): Promise<PosError | null> => {
         const result = await submitSale(
-            saleBody(cart, tenders, total, registerId),
+            saleBody(cart, tenders, total, registerId, courier),
         );
         if (!result.ok) {
             if (result.error.code === 'approval_expired') {
@@ -480,7 +485,8 @@ export default function Register(props: Props) {
             return result.error;
         }
         const sale = result.data.sale;
-        setCompleted(sale);
+        // Print after sale off: no done panel, straight to the next sale.
+        setCompleted(showDonePanel(settings.auto_print) ? sale : null);
         setLastSale(sale);
         dispatch({ type: 'clear', uuid: newClientUuid() });
         setDialog(null);
@@ -506,6 +512,12 @@ export default function Register(props: Props) {
         }
         if (exceedsCap(totals, capBp)) {
             toast.warning(t('pos.discount.over_cap_pay'));
+        }
+        if (payBlockedByNoCustomer(cart.customer, settings.require_customer)) {
+            toast.warning(t('pos.pin.customer_required'));
+            setDialog('customer');
+
+            return;
         }
         if (payBlockedByPin(cart.customer, settings.pin_policy, cart.member)) {
             toast.warning(t('pos.pin.required_to_pay'));
@@ -1530,6 +1542,7 @@ export default function Register(props: Props) {
                 customer={customer}
                 approval={approval}
                 autoPrint={settings.auto_print}
+                couriers={props.couriers}
                 onSubmit={pay}
                 onNeedApproval={setApprovalFor}
                 onAttachCustomer={() => setDialog('customer')}

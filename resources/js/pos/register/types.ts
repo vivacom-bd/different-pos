@@ -22,7 +22,10 @@ export type RegisterSettings = {
     tax_inclusive: boolean;
     rounding_step: Paisa;
     backdate_days: number;
+    /** Print the receipt (and show the done panel) after a sale; off = straight to the next sale. */
     auto_print: boolean;
+    /** tenants.settings.require_customer_on_sale: no walk-in sales at the register. */
+    require_customer: boolean;
     paper: string;
     allow_negative_stock: boolean;
     /** tenants.settings.customer_pin_policy. */

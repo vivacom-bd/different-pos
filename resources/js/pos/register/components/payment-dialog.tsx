@@ -68,7 +68,12 @@ type Props = {
     approval: Approval | null;
     /** The register prints the receipt on completion (labels the button "Complete Sale & Print Receipt"). */
     autoPrint?: boolean;
-    onSubmit: (tenders: TenderRow[]) => Promise<PosError | null>;
+    /** Courier names offered for this sale (Settings > Couriers); empty hides the picker. */
+    couriers?: readonly string[];
+    onSubmit: (
+        tenders: TenderRow[],
+        courier: string | null,
+    ) => Promise<PosError | null>;
     onNeedApproval: (permission: string) => void;
     onAttachCustomer: () => void;
     onClose: () => void;
@@ -98,6 +103,7 @@ function PaymentBody({
     customer,
     approval,
     autoPrint = false,
+    couriers = [],
     onSubmit,
     onNeedApproval,
     onAttachCustomer,
@@ -115,6 +121,7 @@ function PaymentBody({
     );
     const [busy, setBusyState] = useState(false);
     const [error, setError] = useState<PosError | null>(null);
+    const [courier, setCourier] = useState('');
     const formRef = useRef<HTMLFormElement>(null);
     const setBusy = (value: boolean) => {
         setBusyState(value);
@@ -162,7 +169,10 @@ function PaymentBody({
         }
         setBusy(true);
         setError(null);
-        const result = await onSubmit(rows.filter((r) => r.amount > 0));
+        const result = await onSubmit(
+            rows.filter((r) => r.amount > 0),
+            courier === '' ? null : courier,
+        );
         setBusy(false);
         setError(result);
     };
@@ -353,6 +363,29 @@ function PaymentBody({
                         >
                             {t('pos.pay.reset')}
                         </button>
+                    </div>
+                )}
+                {couriers.length > 0 && (
+                    <div className="space-y-1 pt-2">
+                        <label
+                            htmlFor="pos-pay-courier"
+                            className="text-[11px] font-medium text-foreground"
+                        >
+                            {t('pos.pay.courier')}
+                        </label>
+                        <select
+                            id="pos-pay-courier"
+                            className="h-9 w-full rounded-lg border bg-surface-sunken px-2.5 text-xs text-foreground outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-ring/50 [@media(pointer:coarse)]:min-h-11"
+                            value={courier}
+                            onChange={(e) => setCourier(e.target.value)}
+                        >
+                            <option value="">{t('pos.pay.courier_none')}</option>
+                            {couriers.map((name) => (
+                                <option key={name} value={name}>
+                                    {name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
                 )}
                 {customer && (

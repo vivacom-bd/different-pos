@@ -29,7 +29,6 @@ final class SaveCustomerRequest extends FormRequest
             'name' => ['required', 'string', 'max:150'],
             'name_bn' => ['nullable', 'string', 'max:150'],
             'shop_name' => ['nullable', 'string', 'max:150'],
-            'courier_name' => ['nullable', 'string', 'max:80'],
             'phone' => ['required', 'string', 'max:30'],
             'alt_phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:150'],

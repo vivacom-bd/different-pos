@@ -438,6 +438,12 @@ export function BillHead() {
                 <th scope="col" className={cn(th, 'w-32 text-center')}>
                     {t('pos.bill.col_qty')}
                 </th>
+                <th
+                    scope="col"
+                    className={cn(th, 'text-right max-md:hidden')}
+                >
+                    {t('pos.bill.col_available')}
+                </th>
                 <th scope="col" className={cn(th, 'text-right')}>
                     {t('pos.bill.col_disc')}
                 </th>
@@ -614,6 +620,18 @@ export const BillLine = forwardRef<
                         <Plus className="size-3" aria-hidden="true" />
                     </button>
                 </div>
+            </td>
+            <td
+                className={cn(
+                    td,
+                    'num text-right text-[11px] whitespace-nowrap max-md:hidden',
+                    line.stock !== null && line.stock <= 0
+                        ? 'font-semibold text-danger'
+                        : 'text-muted-foreground',
+                )}
+                data-testid="bill-available"
+            >
+                {line.stock === null ? '–' : d.qty(line.stock)}
             </td>
             <td className={cn(td, 'text-right max-md:hidden')}>
                 <button

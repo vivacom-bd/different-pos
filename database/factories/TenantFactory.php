@@ -21,7 +21,7 @@ final class TenantFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name).'-'.Str::lower(Str::random(4)),
             'phone' => '+8801'.fake()->numerify('#########'),
-            'settings' => [],
+            'settings' => ['require_customer_on_sale' => false],
         ];
     }
 

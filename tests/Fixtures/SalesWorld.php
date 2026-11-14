@@ -53,7 +53,7 @@ final readonly class SalesWorld
     {
         $context = app(TenantContext::class);
         [$tenant, $branch] = $context->withoutTenancy(static function () use ($tenantSettings, $branchSettings): array {
-            $tenant = Tenant::factory()->create(['settings' => ['tax_inclusive' => false, ...$tenantSettings]]);
+            $tenant = Tenant::factory()->create(['settings' => ['tax_inclusive' => false, 'require_customer_on_sale' => false, ...$tenantSettings]]);
 
             return [$tenant, Branch::factory()->for($tenant)->create(['code' => 'DF1', 'settings' => $branchSettings])];
         });
