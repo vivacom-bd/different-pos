@@ -18,6 +18,8 @@ return [
     'customer' => 'Customer',
     'customer_no' => 'Customer no.',
     'shop' => 'Shop',
+    'address' => 'Address',
+    'courier' => 'Courier',
     'phone' => 'Phone',
     'seller_bin' => 'BIN',
     'buyer_bin' => 'Buyer BIN',

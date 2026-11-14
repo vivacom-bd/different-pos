@@ -37,6 +37,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string|null $name_bn
  * @property string|null $shop_name
+ * @property string|null $courier_name
  * @property string|null $phone
  * @property string|null $alt_phone
  * @property string|null $email
@@ -83,7 +84,7 @@ final class Customer extends Model
     protected $fillable = [
         'customer_group_id', 'customer_no', 'name', 'name_bn', 'shop_name', 'phone', 'alt_phone', 'email', 'gender',
         'dob', 'anniversary_date', 'vat_bin', 'geo_division_id', 'geo_district_id', 'geo_upazila_id', 'geo_union_id',
-        'area', 'post_code', 'address_line', 'location_verified', 'member_since', 'credit_limit', 'balance',
+        'area', 'post_code', 'address_line', 'courier_name', 'location_verified', 'member_since', 'credit_limit', 'balance',
         'last_purchase_at', 'notes', 'is_walk_in', 'is_active', 'origin_client_uuid', 'merged_into_id', 'legacy_id',
         'created_by', 'updated_by',
     ];

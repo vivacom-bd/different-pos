@@ -17,6 +17,8 @@ return [
     'customer' => 'গ্রাহক',
     'customer_no' => 'গ্রাহক নং',
     'shop' => 'দোকান',
+    'address' => 'ঠিকানা',
+    'courier' => 'কুরিয়ার',
     'phone' => 'ফোন',
     'seller_bin' => 'বিআইএন',
     'buyer_bin' => 'ক্রেতার বিআইএন',

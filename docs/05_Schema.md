@@ -208,6 +208,7 @@ customers [tenant] SD
   area VARCHAR(150) NULL                   -- free text (market/para/road), autocompleted from tenant's existing values
   post_code CHAR(4) NULL
   address_line VARCHAR(500) NULL           -- house/road/holding; legacy free-text address lands here
+  courier_name VARCHAR(80) NULL            -- default courier (free text); printed in the invoice/receipt customer block
   location_verified BOOL DEFAULT 1         -- 0 when auto-parsed from legacy text
   -- membership & PIN
   pin_hash VARCHAR(255) NULL               -- argon2id; NEVER serialised (hidden), never synced

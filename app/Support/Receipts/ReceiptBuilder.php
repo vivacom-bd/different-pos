@@ -39,7 +39,7 @@ use Picqer\Barcode\BarcodeGeneratorSVG;
  * drops the customer's phone, number and BIN.
  *
  * @phpstan-type Shop array{name: string, logo_url: string|null, legal_name: string|null, vat_bin: string|null, address: string|null, phone: string|null, branch: string, branch_address: string|null, branch_phone: string|null, header: string|null, footer: string|null}
- * @phpstan-type Party array{name: string, shop_name: string|null, customer_no: string|null, phone: string|null, vat_bin: string|null}
+ * @phpstan-type Party array{name: string, shop_name: string|null, customer_no: string|null, phone: string|null, vat_bin: string|null, address: string|null, courier_name: string|null}
  * @phpstan-type Row array{label: string, value: string, strong?: bool}
  */
 final readonly class ReceiptBuilder
@@ -51,7 +51,7 @@ final readonly class ReceiptBuilder
      */
     public function sale(Sale $sale, string $locale, bool $public = false): array
     {
-        $sale->loadMissing(['items', 'customer', 'soldBy']);
+        $sale->loadMissing(['items', 'customer.geoDistrict', 'customer.geoUpazila', 'soldBy']);
         /** @var list<SaleItem> $items */
         $items = $sale->items->sortBy('id')->values()->all();
         $shares = OrderDiscountShares::of($sale, $items);
@@ -118,7 +118,7 @@ final readonly class ReceiptBuilder
             'cashier' => $sale->soldBy?->name,
             'voided' => $sale->status === SaleStatus::Voided,
             'void_reason' => $public ? null : $sale->void_reason,
-            'customer' => $this->party($sale->customer, $public, $sale->buyer_vat_bin),
+            'customer' => $this->party($sale->customer, $public, $sale->buyer_vat_bin, $locale),
             'lines' => $lines,
             'totals' => $totals,
             'payments' => $this->salePayments($sale, $locale),
@@ -165,16 +165,12 @@ final readonly class ReceiptBuilder
         $customer = $sale->customer;
         $party = null;
         if ($customer instanceof Customer && ! $customer->is_walk_in) {
-            $geoName = static fn (GeoDistrict|GeoUpazila|null $geo): ?string => $geo === null ? null : ($locale === 'bn' ? $geo->name_bn : $geo->name_en);
-            // What a courier routes by: street, area, upazila, district, post code.
-            $address = collect([$customer->address_line, $customer->area, $geoName($customer->geoUpazila), $geoName($customer->geoDistrict), $customer->post_code])
-                ->filter(static fn (?string $part): bool => $part !== null && trim($part) !== '')
-                ->implode(', ');
+            $address = $this->address($customer, $locale);
             $party = [
                 'name' => $customer->name,
                 'shop_name' => $customer->shop_name,
                 'phone' => $customer->phone,
-                'address' => $address !== '' ? $address : null,
+                'address' => $address,
             ];
         }
 
@@ -251,7 +247,7 @@ final readonly class ReceiptBuilder
             'date' => $this->date($return->returned_at, $locale),
             'cashier' => $creator?->name,
             'sale_number' => (string) $return->sale?->number,
-            'customer' => $this->party($return->customer, false, null),
+            'customer' => $this->party($return->customer, false, null, $locale),
             'lines' => $lines,
             'totals' => $totals,
             'mode' => (string) __('receipts.refund_modes.'.$return->refund_mode->value),
@@ -301,7 +297,7 @@ final readonly class ReceiptBuilder
             'number' => $payment->number,
             'date' => $this->date($payment->paid_at, $locale),
             'received_by' => $payment->receivedBy?->name,
-            'customer' => $this->party($customer, false, null),
+            'customer' => $this->party($customer, false, null, $locale),
             'method' => $payment->paymentMethod instanceof PaymentMethod ? $payment->paymentMethod->name : '',
             'reference' => $payment->reference,
             'amount' => $this->money($payment->amount, $locale),
@@ -365,7 +361,7 @@ final readonly class ReceiptBuilder
     }
 
     /** @return Party|null */
-    private function party(?Customer $customer, bool $public, ?string $bin): ?array
+    private function party(?Customer $customer, bool $public, ?string $bin, string $locale): ?array
     {
         if (! $customer instanceof Customer || $customer->is_walk_in) {
             return null;
@@ -377,7 +373,20 @@ final readonly class ReceiptBuilder
             'customer_no' => $public || $customer->customer_no === null ? null : CustomerNumber::format((string) $customer->customer_no),
             'phone' => $public ? null : $customer->phone,
             'vat_bin' => $public ? null : ($bin ?? $customer->vat_bin),
+            'address' => $public ? null : $this->address($customer, $locale),
+            'courier_name' => $public ? null : ($customer->courier_name !== null && trim($customer->courier_name) !== '' ? $customer->courier_name : null),
         ];
+    }
+
+    /** Street, area, upazila, district, post code (what a courier routes by); null when none is filled. */
+    private function address(Customer $customer, string $locale): ?string
+    {
+        $geoName = static fn (GeoDistrict|GeoUpazila|null $geo): ?string => $geo === null ? null : ($locale === 'bn' ? $geo->name_bn : $geo->name_en);
+        $address = collect([$customer->address_line, $customer->area, $geoName($customer->geoUpazila), $geoName($customer->geoDistrict), $customer->post_code])
+            ->filter(static fn (?string $part): bool => $part !== null && trim($part) !== '')
+            ->implode(', ');
+
+        return $address !== '' ? $address : null;
     }
 
     private function money(Money $money, string $locale, bool $symbol = true): string

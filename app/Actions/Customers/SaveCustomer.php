@@ -32,7 +32,7 @@ final readonly class SaveCustomer
     public function __construct(private CustomerNumber $numbers, private GeoCatalog $geo) {}
 
     /**
-     * @param  array{name?: string, name_bn?: string|null, shop_name?: string|null, phone?: string, alt_phone?: string|null, email?: string|null, gender?: Gender|string|null, dob?: DateTimeInterface|string|null, anniversary_date?: DateTimeInterface|string|null, customer_group_id?: int|null, credit_limit?: Money|string|null, vat_bin?: string|null, geo_division_id?: int|null, geo_district_id?: int|null, geo_upazila_id?: int|null, geo_union_id?: int|null, address_line?: string|null, area?: string|null, post_code?: string|null, notes?: string|null, origin_client_uuid?: string|null}  $data
+     * @param  array{name?: string, name_bn?: string|null, shop_name?: string|null, phone?: string, alt_phone?: string|null, email?: string|null, gender?: Gender|string|null, dob?: DateTimeInterface|string|null, anniversary_date?: DateTimeInterface|string|null, customer_group_id?: int|null, credit_limit?: Money|string|null, vat_bin?: string|null, geo_division_id?: int|null, geo_district_id?: int|null, geo_upazila_id?: int|null, geo_union_id?: int|null, address_line?: string|null, courier_name?: string|null, area?: string|null, post_code?: string|null, notes?: string|null, origin_client_uuid?: string|null}  $data
      */
     public function handle(User $actor, array $data, ?Customer $customer = null): Customer
     {
@@ -72,11 +72,14 @@ final readonly class SaveCustomer
                 $attributes['alt_phone'] = $alt === '' ? null : (BdPhone::toE164($alt) ?? throw InvalidPartyData::invalid('Enter a valid alternate mobile number.'));
             }
 
-            foreach (['name_bn', 'shop_name', 'email', 'address_line', 'area', 'post_code', 'notes', 'origin_client_uuid'] as $key) {
+            foreach (['name_bn', 'shop_name', 'email', 'address_line', 'courier_name', 'area', 'post_code', 'notes', 'origin_client_uuid'] as $key) {
                 if (array_key_exists($key, $data)) {
                     $value = is_string($data[$key]) ? trim($data[$key]) : $data[$key];
                     $attributes[$key] = $value === '' ? null : $value;
                 }
+            }
+            if (isset($attributes['courier_name']) && mb_strlen((string) $attributes['courier_name']) > 80) {
+                throw InvalidPartyData::invalid('A courier name has at most 80 characters.');
             }
             if (isset($attributes['email']) && filter_var($attributes['email'], FILTER_VALIDATE_EMAIL) === false) {
                 throw InvalidPartyData::invalid('Enter a valid email address.');

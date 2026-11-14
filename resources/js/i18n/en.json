@@ -1341,6 +1341,8 @@
             "name_en_ph": "e.g. Asif Mahmud",
             "name_bn": "Full Name (বাংলা)",
             "name_bn_ph": "e.g. আসিফ মাহমুদ",
+            "courier_name": "Default courier",
+            "courier_ph": "e.g. Sundarban Courier (Optional)",
             "shop_ph": "e.g. Moon Fashion House (Optional)",
             "phone": "Primary Mobile Number (SMS)",
             "phone_hint": "Format: 11 digits starting with 013, 014, 015, 016, 017, 018, 019",

@@ -200,3 +200,12 @@ it('isolates customers per tenant', function (): void {
     expect(fn () => app(MergeCustomers::class)->handle($this->user, $mine, $foreign))->toThrow(InvalidPartyData::class);
     expect(fn () => ($this->save)(['phone' => '01812345678', 'customer_group_id' => $foreign->customer_group_id]))->toThrow(ModelNotFoundException::class);
 });
+
+it('saves, trims, clears and length-checks the default courier name', function (): void {
+    $customer = ($this->save)(['courier_name' => '  Sundarban Courier ']);
+    expect($customer->courier_name)->toBe('Sundarban Courier');
+
+    expect(($this->save)(['courier_name' => ''], $customer)->courier_name)->toBeNull();
+    expect(($this->save)(['name' => 'Renamed'], $customer)->courier_name)->toBeNull();
+    expect(fn () => ($this->save)(['courier_name' => str_repeat('x', 81)], $customer))->toThrow(InvalidPartyData::class);
+});
