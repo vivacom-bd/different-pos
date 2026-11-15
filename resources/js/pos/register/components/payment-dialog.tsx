@@ -8,17 +8,17 @@ import {
     UserPlus,
     Wallet,
     type LucideIcon,
-} from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Kbd } from '@/components/kbd';
-import { MoneyInput } from '@/components/money-input';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import type { Paisa } from '@/engine/money';
-import { useDigits } from '@/hooks/use-digits';
-import { useT } from '@/i18n';
-import { cn } from '@/lib/utils';
-import type { PosError } from '../api';
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Kbd } from "@/components/kbd";
+import { MoneyInput } from "@/components/money-input";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import type { Paisa } from "@/engine/money";
+import { useDigits } from "@/hooks/use-digits";
+import { useT } from "@/i18n";
+import { cn } from "@/lib/utils";
+import type { PosError } from "../api";
 import {
     addCash,
     creditMeter,
@@ -29,18 +29,18 @@ import {
     pickTender,
     tenderOptions,
     type TenderIcon,
-} from '../present';
-import { OVERRIDABLE, settle, type TenderRow } from '../tenders';
-import type { Approval, CustomerCard, PaymentMethod } from '../types';
-import { PosDialog } from './pos-dialog';
+} from "../present";
+import { OVERRIDABLE, settle, type TenderRow } from "../tenders";
+import type { Approval, CustomerCard, PaymentMethod } from "../types";
+import { PosDialog } from "./pos-dialog";
 
 /** Server error code → the manager permission that can lift it. */
 export const APPROVABLE: Record<string, string> = {
-    discount_cap_exceeded: 'pos.discount_override',
-    below_cost_sale: 'pos.sell_below_cost',
-    price_override_not_allowed: 'pos.price_override',
-    credit_limit_exceeded: 'pos.customer_pin_override',
-    backdate_not_allowed: 'pos.backdate',
+    discount_cap_exceeded: "pos.discount_override",
+    below_cost_sale: "pos.sell_below_cost",
+    price_override_not_allowed: "pos.price_override",
+    credit_limit_exceeded: "pos.customer_pin_override",
+    backdate_not_allowed: "pos.backdate",
 };
 
 const ICONS: Record<TenderIcon, LucideIcon> = {
@@ -70,6 +70,8 @@ type Props = {
     autoPrint?: boolean;
     /** Courier names offered for this sale (Settings > Couriers); empty hides the picker. */
     couriers?: readonly string[];
+    /** Couriers exist but none is the default: a courier must be chosen to complete the sale. */
+    courierRequired?: boolean;
     onSubmit: (
         tenders: TenderRow[],
         courier: string | null,
@@ -87,8 +89,8 @@ export function PaymentDialog({ open, onClose, ...rest }: Props) {
         <PosDialog
             open={open}
             onClose={() => !busy && onClose()}
-            title={t('pos.pay.title')}
-            description={t('pos.pay.hint')}
+            title={t("pos.pay.title")}
+            description={t("pos.pay.hint")}
             icon={CreditCard}
             className="sm:max-w-2xl"
         >
@@ -104,24 +106,30 @@ function PaymentBody({
     approval,
     autoPrint = false,
     couriers = [],
+    courierRequired = false,
     onSubmit,
     onNeedApproval,
     onAttachCustomer,
     onBusy,
-}: Omit<Props, 'open' | 'onClose'> & { onBusy: (busy: boolean) => void }) {
+}: Omit<Props, "open" | "onClose"> & { onBusy: (busy: boolean) => void }) {
     const { t } = useT();
     const d = useDigits();
     const options = useMemo(
         () => tenderOptions(methods, customer),
         [methods, customer],
     );
-    const cashId = options.find((o) => o.method.type === 'cash')?.method.id;
+    const cashId = options.find((o) => o.method.type === "cash")?.method.id;
     const [rows, setRows] = useState<TenderRow[]>(() =>
         initialTenders(options, total),
     );
     const [busy, setBusyState] = useState(false);
     const [error, setError] = useState<PosError | null>(null);
-    const [courier, setCourier] = useState('');
+    const [courier, setCourier] = useState(
+        // The list is ordered default-first; with a default the sale starts on it (still changeable).
+        courierRequired ? "" : (couriers[0] ?? ""),
+    );
+    const missingCourier =
+        courierRequired && couriers.length > 0 && courier === "";
     const formRef = useRef<HTMLFormElement>(null);
     const setBusy = (value: boolean) => {
         setBusyState(value);
@@ -164,14 +172,14 @@ function PaymentBody({
     };
 
     const submit = async () => {
-        if (busy || blocking.length > 0) {
+        if (busy || blocking.length > 0 || missingCourier) {
             return;
         }
         setBusy(true);
         setError(null);
         const result = await onSubmit(
             rows.filter((r) => r.amount > 0),
-            courier === '' ? null : courier,
+            courier === "" ? null : courier,
         );
         setBusy(false);
         setError(result);
@@ -198,21 +206,21 @@ function PaymentBody({
             }
             e.preventDefault();
             switch (action.type) {
-                case 'submit':
+                case "submit":
                     void submit();
                     break;
-                case 'due':
+                case "due":
                     setRows((prev) => leaveDue(prev, cashId));
                     refocus();
                     break;
-                case 'exact':
+                case "exact":
                     setRows((prev) => exactCash(prev, total, cashId));
                     refocus();
                     break;
-                case 'pick':
+                case "pick":
                     pick(action.methodId);
                     break;
-                case 'quick':
+                case "quick":
                     setRows((prev) =>
                         addCash(prev, cashId, CASH_STEPS[action.index] ?? 0),
                     );
@@ -227,9 +235,9 @@ function PaymentBody({
             formRef.current?.closest<HTMLElement>('[role="dialog"]') ??
             formRef.current;
         const listener = (e: KeyboardEvent) => keys.current(e);
-        panel?.addEventListener('keydown', listener);
+        panel?.addEventListener("keydown", listener);
 
-        return () => panel?.removeEventListener('keydown', listener);
+        return () => panel?.removeEventListener("keydown", listener);
     }, []);
 
     return (
@@ -244,7 +252,7 @@ function PaymentBody({
             {/* Left: tender breakdown */}
             <fieldset className="space-y-2">
                 <legend className="mb-1 text-xs font-bold text-muted-foreground">
-                    {t('pos.pay.breakdown')}
+                    {t("pos.pay.breakdown")}
                 </legend>
                 {options.map(({ method, icon, key }) => {
                     const Icon = ICONS[icon];
@@ -265,7 +273,7 @@ function PaymentBody({
                                     <span className="truncate">
                                         {method.name}
                                     </span>
-                                    {method.type === 'customer_credit' &&
+                                    {method.type === "customer_credit" &&
                                         customer && (
                                             <span className="num text-[10px] text-muted-foreground">
                                                 ({d.money(customer.advance)})
@@ -289,9 +297,9 @@ function PaymentBody({
                                         }
                                         aria-describedby="pos-pay-summary"
                                         className={cn(
-                                            'h-9 bg-surface-sunken font-mono font-bold',
+                                            "h-9 bg-surface-sunken font-mono font-bold",
                                             amount === 0 &&
-                                                'text-muted-foreground',
+                                                "text-muted-foreground",
                                         )}
                                     />
                                 </div>
@@ -299,13 +307,13 @@ function PaymentBody({
                             {method.requires_reference && amount > 0 && (
                                 <Input
                                     className="ml-auto h-9 w-[calc(100%-9.5rem)] text-xs"
-                                    value={row?.reference ?? ''}
-                                    placeholder={t('pos.pay.reference')}
-                                    aria-label={t('pos.pay.reference_for', {
+                                    value={row?.reference ?? ""}
+                                    placeholder={t("pos.pay.reference")}
+                                    aria-label={t("pos.pay.reference_for", {
                                         method: method.name,
                                     })}
                                     aria-invalid={
-                                        (row?.reference ?? '').trim() === '' ||
+                                        (row?.reference ?? "").trim() === "" ||
                                         undefined
                                     }
                                     onChange={(e) =>
@@ -330,7 +338,7 @@ function PaymentBody({
                                 )
                             }
                         >
-                            {t('pos.pay.exact')}
+                            {t("pos.pay.exact")}
                             <Kbd keys="alt+e" className="text-[9px]" />
                         </button>
                         {CASH_STEPS.map((step, i) => (
@@ -338,11 +346,11 @@ function PaymentBody({
                                 key={step}
                                 type="button"
                                 className="touch-target flex min-h-7 flex-1 items-center justify-center gap-1 rounded border bg-surface-sunken py-1 font-mono text-[10px] font-semibold hover:border-primary"
-                                aria-label={t('pos.pay.add_cash', {
+                                aria-label={t("pos.pay.add_cash", {
                                     amount: d.money(step),
                                 })}
                                 aria-keyshortcuts={String(i + 1)}
-                                title={`${t('pos.pay.add_cash', { amount: d.money(step) })} (${i + 1})`}
+                                title={`${t("pos.pay.add_cash", { amount: d.money(step) })} (${i + 1})`}
                                 onClick={() =>
                                     setRows((prev) =>
                                         addCash(prev, cashId, step),
@@ -361,7 +369,7 @@ function PaymentBody({
                                 )
                             }
                         >
-                            {t('pos.pay.reset')}
+                            {t("pos.pay.reset")}
                         </button>
                     </div>
                 )}
@@ -371,21 +379,43 @@ function PaymentBody({
                             htmlFor="pos-pay-courier"
                             className="text-[11px] font-medium text-foreground"
                         >
-                            {t('pos.pay.courier')}
+                            {courierRequired
+                                ? t("pos.pay.courier_required")
+                                : t("pos.pay.courier")}
                         </label>
                         <select
                             id="pos-pay-courier"
                             className="h-9 w-full rounded-lg border bg-surface-sunken px-2.5 text-xs text-foreground outline-none focus-visible:border-primary focus-visible:ring-[3px] focus-visible:ring-ring/50 [@media(pointer:coarse)]:min-h-11"
                             value={courier}
+                            required={courierRequired}
+                            aria-invalid={missingCourier}
+                            aria-describedby={
+                                missingCourier
+                                    ? "pos-pay-courier-error"
+                                    : undefined
+                            }
                             onChange={(e) => setCourier(e.target.value)}
                         >
-                            <option value="">{t('pos.pay.courier_none')}</option>
+                            <option value="">
+                                {courierRequired
+                                    ? t("pos.pay.courier_choose")
+                                    : t("pos.pay.courier_none")}
+                            </option>
                             {couriers.map((name) => (
                                 <option key={name} value={name}>
                                     {name}
                                 </option>
                             ))}
                         </select>
+                        {missingCourier && (
+                            <p
+                                id="pos-pay-courier-error"
+                                role="alert"
+                                className="text-[11px] font-medium text-danger"
+                            >
+                                {t("pos.pay.courier_required_error")}
+                            </p>
+                        )}
                     </div>
                 )}
                 {customer && (
@@ -396,7 +426,7 @@ function PaymentBody({
                             setRows((prev) => leaveDue(prev, cashId))
                         }
                     >
-                        {t('pos.pay.leave_due')}
+                        {t("pos.pay.leave_due")}
                         <Kbd keys="alt+d" className="text-[9px]" />
                     </button>
                 )}
@@ -410,13 +440,13 @@ function PaymentBody({
                     aria-live="polite"
                 >
                     <div className="flex justify-between text-muted-foreground">
-                        <span>{t('pos.pay.payable')}</span>
+                        <span>{t("pos.pay.payable")}</span>
                         <span className="num text-sm font-bold text-foreground">
                             {d.money(total)}
                         </span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
-                        <span>{t('pos.pay.tendered')}</span>
+                        <span>{t("pos.pay.tendered")}</span>
                         <span className="num text-sm font-bold text-success">
                             {d.money(s.tendered)}
                         </span>
@@ -430,23 +460,23 @@ function PaymentBody({
                                         className="size-3.5"
                                         aria-hidden="true"
                                     />
-                                    {t('pos.pay.paid_amount', {
+                                    {t("pos.pay.paid_amount", {
                                         amount: d.money(s.tendered),
                                     })}
                                 </span>
                                 <span>
-                                    {t('pos.pay.due')}: {d.money(s.due)}
+                                    {t("pos.pay.due")}: {d.money(s.due)}
                                 </span>
                             </div>
                             {s.tendered === 0 && (
                                 <p className="text-[10px] font-bold">
-                                    {t('pos.pay.full_credit')}
+                                    {t("pos.pay.full_credit")}
                                 </p>
                             )}
                             {!customer ? (
                                 <div className="flex items-center justify-between gap-2 border-t border-warning/30 pt-2">
                                     <span className="text-[10px] font-bold text-danger">
-                                        {t('pos.pay.attach_for_due')}
+                                        {t("pos.pay.attach_for_due")}
                                     </span>
                                     <button
                                         type="button"
@@ -457,7 +487,7 @@ function PaymentBody({
                                             className="size-3"
                                             aria-hidden="true"
                                         />
-                                        {t('pos.pay.attach')}
+                                        {t("pos.pay.attach")}
                                     </button>
                                 </div>
                             ) : (
@@ -465,7 +495,7 @@ function PaymentBody({
                                     <div className="space-y-1 border-t border-warning/30 pt-2">
                                         <div className="flex justify-between font-mono text-[10px]">
                                             <span>
-                                                {t('pos.pay.balance_after')}
+                                                {t("pos.pay.balance_after")}
                                             </span>
                                             <span className="num">
                                                 {d.money(s.balanceAfter)}
@@ -481,10 +511,10 @@ function PaymentBody({
                                             >
                                                 <div
                                                     className={cn(
-                                                        'h-full',
+                                                        "h-full",
                                                         meter.over
-                                                            ? 'bg-danger'
-                                                            : 'bg-warning',
+                                                            ? "bg-danger"
+                                                            : "bg-warning",
                                                     )}
                                                     style={{
                                                         width: `${meter.percent}%`,
@@ -498,7 +528,7 @@ function PaymentBody({
                         </div>
                     ) : (
                         <div className="flex justify-between border-t pt-2 font-bold">
-                            <span>{t('pos.pay.change')}</span>
+                            <span>{t("pos.pay.change")}</span>
                             <span className="num text-base text-success">
                                 {d.money(s.change)}
                             </span>
@@ -510,7 +540,7 @@ function PaymentBody({
                         s.creditUsed > 0 &&
                         s.balanceAfter !== null && (
                             <div className="flex justify-between text-muted-foreground">
-                                <span>{t('pos.pay.balance_after')}</span>
+                                <span>{t("pos.pay.balance_after")}</span>
                                 <span className="num">
                                     {d.money(s.balanceAfter)}
                                 </span>
@@ -524,23 +554,23 @@ function PaymentBody({
                                     key={p}
                                     className={cn(
                                         OVERRIDABLE.includes(p) && approved
-                                            ? 'text-muted-foreground'
-                                            : 'font-semibold text-danger',
+                                            ? "text-muted-foreground"
+                                            : "font-semibold text-danger",
                                     )}
                                 >
                                     {t(`pos.pay.problem.${p}`)}
-                                    {p === 'over_limit' && !approved && (
+                                    {p === "over_limit" && !approved && (
                                         <Button
                                             type="button"
                                             variant="link"
                                             className="h-auto p-0 pl-2 text-[11px]"
                                             onClick={() =>
                                                 onNeedApproval(
-                                                    'pos.customer_pin_override',
+                                                    "pos.customer_pin_override",
                                                 )
                                             }
                                         >
-                                            {t('pos.manager.ask')}
+                                            {t("pos.manager.ask")}
                                         </Button>
                                     )}
                                 </li>
@@ -554,7 +584,7 @@ function PaymentBody({
                             role="alert"
                         >
                             <p className="font-semibold">
-                                {error.message || t('pos.errors.network')}
+                                {error.message || t("pos.errors.network")}
                             </p>
                             {error.detail && (
                                 <p className="mt-1 text-muted-foreground">
@@ -569,12 +599,12 @@ function PaymentBody({
                                     className="mt-2 min-h-9"
                                     onClick={() =>
                                         onNeedApproval(
-                                            APPROVABLE[error.code ?? ''] ?? '',
+                                            APPROVABLE[error.code ?? ""] ?? "",
                                         )
                                     }
                                 >
-                                    <ShieldCheck aria-hidden="true" />{' '}
-                                    {t('pos.manager.ask')}
+                                    <ShieldCheck aria-hidden="true" />{" "}
+                                    {t("pos.manager.ask")}
                                 </Button>
                             )}
                         </div>
@@ -585,8 +615,8 @@ function PaymentBody({
                             <ShieldCheck
                                 className="size-3.5"
                                 aria-hidden="true"
-                            />{' '}
-                            {t('pos.manager.approved_by', {
+                            />{" "}
+                            {t("pos.manager.approved_by", {
                                 name: approval.managerName,
                             })}
                         </p>
@@ -596,15 +626,15 @@ function PaymentBody({
                 <button
                     type="submit"
                     className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-md transition-colors hover:bg-primary-hover disabled:opacity-40"
-                    disabled={busy || blocking.length > 0}
+                    disabled={busy || blocking.length > 0 || missingCourier}
                 >
                     {busy
-                        ? t('pos.pay.saving')
+                        ? t("pos.pay.saving")
                         : s.due > 0
-                          ? t('pos.pay.complete_due')
+                          ? t("pos.pay.complete_due")
                           : autoPrint
-                            ? t('pos.pay.complete_print')
-                            : t('pos.pay.complete')}
+                            ? t("pos.pay.complete_print")
+                            : t("pos.pay.complete")}
                     <Kbd keys="f10" tone="on-primary" />
                 </button>
             </div>

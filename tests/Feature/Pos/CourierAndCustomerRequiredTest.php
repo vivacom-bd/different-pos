@@ -9,6 +9,7 @@ use App\Models\Courier;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Support\Tenancy\TenantContext;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia;
 use Tests\Fixtures\SalesWorld;
@@ -127,4 +128,74 @@ it('flags a synced device sale without a customer instead of rejecting it', func
     ), SaleOrigin::Device);
 
     expect($sale->sync_flags)->toBe(['customer_missing']);
+});
+
+// Courier required without a default
+
+function makeCouriers(bool $withDefault): void
+{
+    Courier::query()->create(['name' => 'Pathao Courier', 'is_default' => $withDefault, 'is_active' => true]);
+    Courier::query()->create(['name' => 'RedX', 'is_default' => false, 'is_active' => true]);
+}
+
+it('refuses an online sale without a courier when couriers exist and none is default', function (): void {
+    $customer = $this->world->customer();
+    makeCouriers(false);
+
+    $this->actingAs($this->cashier)->postJson('/app/pos/sales', courierSale($this->world, $this->shirt, ['customer_id' => $customer->id]))
+        ->assertUnprocessable()->assertJsonPath('code', 'courier_required')->assertJsonPath('message', 'Choose a courier for this sale before completing it.');
+    expect(Sale::query()->count())->toBe(0);
+
+    $this->actingAs($this->cashier)->postJson('/app/pos/sales', courierSale($this->world, $this->shirt, ['customer_id' => $customer->id, 'courier_name' => 'RedX']))->assertCreated();
+});
+
+it('keeps the courier optional when a default exists or there are no couriers', function (): void {
+    $customer = $this->world->customer();
+    makeCouriers(true);
+
+    $this->actingAs($this->cashier)->postJson('/app/pos/sales', courierSale($this->world, $this->shirt, ['customer_id' => $customer->id]))->assertCreated();
+});
+
+it('flags a synced device sale without a courier instead of rejecting it', function (): void {
+    makeCouriers(false);
+
+    $sale = app(CompleteSale::class)->handle($this->world->user(), new SaleDraft(
+        [$this->world->line($this->shirt, 1)],
+        [$this->world->tender('cash', 150_000)],
+        $this->world->customer()->id,
+    ), SaleOrigin::Device);
+
+    expect($sale->sync_flags)->toBe(['courier_missing']);
+});
+
+it('tells the register whether a courier is required', function (): void {
+    makeCouriers(false);
+    $this->actingAs($this->cashier)->get('/app/pos')->assertInertia(fn (AssertableInertia $page) => $page->where('courier_required', true));
+
+    Courier::query()->where('name', 'RedX')->update(['is_default' => true]);
+    $this->actingAs($this->cashier)->get('/app/pos')->assertInertia(fn (AssertableInertia $page) => $page->where('courier_required', false));
+});
+
+it('shares the branch auto_print setting with every page', function (bool $on): void {
+    $this->world->branch->forceFill(['settings' => [...($this->world->branch->settings ?? []), 'auto_print' => $on]])->save();
+
+    $this->actingAs($this->cashier)->get('/app/pos')->assertInertia(fn (AssertableInertia $page) => $page->where('auth.branch_auto_print', $on));
+})->with([true, false]);
+
+it('seeds the default couriers once per tenant that has none', function (): void {
+    $migration = require database_path('migrations/2026_11_15_000100_seed_default_couriers.php');
+    $other = SalesWorld::make();
+    app(TenantContext::class)->forget();
+
+    DB::table('couriers')->delete();
+    DB::table('couriers')->insert(['tenant_id' => $other->tenant->id, 'name' => 'Mine', 'is_default' => true, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+
+    $migration->up();
+    $migration->up();
+
+    $db = DB::table('couriers');
+    expect((clone $db)->where('tenant_id', $this->world->tenant->id)->count())->toBe(count(Courier::DEFAULT_NAMES))
+        ->and((clone $db)->where('tenant_id', $this->world->tenant->id)->where('is_default', true)->exists())->toBeFalse()
+        ->and((clone $db)->where('tenant_id', $this->world->tenant->id)->where('is_active', false)->exists())->toBeFalse()
+        ->and((clone $db)->where('tenant_id', $other->tenant->id)->pluck('name')->all())->toBe(['Mine']);
 });

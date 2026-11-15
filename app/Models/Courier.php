@@ -30,7 +30,24 @@ final class Courier extends Model
     /** @use HasFactory<CourierFactory> */
     use HasFactory;
 
+    /** The couriers every new tenant starts with (all active, none default). The data migration carries its own copy. */
+    public const array DEFAULT_NAMES = [
+        'Steadfast Courier', 'Pathao Courier', 'RedX', 'Sundarban Courier Service', 'SA Paribahan',
+        'Janani Express', 'Karatoa Courier Service', 'eCourier', 'Paperfly', 'Delivery Tiger',
+    ];
+
     protected $fillable = ['name', 'phone', 'is_default', 'is_active'];
+
+    /**
+     * The register must pick a courier on every sale: the tenant (current context) has active couriers
+     * and none of them is the default one to fall back on.
+     */
+    public static function mustPick(): bool
+    {
+        $active = self::query()->where('is_active', true);
+
+        return (clone $active)->exists() && ! (clone $active)->where('is_default', true)->exists();
+    }
 
     protected function casts(): array
     {

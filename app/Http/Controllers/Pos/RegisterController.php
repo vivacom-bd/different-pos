@@ -56,6 +56,7 @@ final class RegisterController extends Controller
                     'requires_reference' => $m->requires_reference,
                 ])->values()->all(),
             'couriers' => Courier::query()->where('is_active', true)->orderByDesc('is_default')->orderBy('name')->pluck('name')->values()->all(),
+            'courier_required' => Courier::mustPick(),
             'categories' => Category::query()->where('is_active', true)->whereNull('parent_id')->orderBy('sort_order')->orderBy('name')
                 ->limit(30)->get(['id', 'name', 'name_bn'])
                 ->map(static fn (Category $c): array => ['id' => $c->id, 'name' => $c->name, 'name_bn' => $c->name_bn])->values()->all(),

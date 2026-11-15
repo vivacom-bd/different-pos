@@ -79,7 +79,7 @@ final class DatabaseSeeder extends Seeder
                 }
 
                 // Couriers offered in the register's pay dialog (editable under Settings > Couriers).
-                foreach (['Pathao', 'Steadfast', 'RedX', 'Sundarban Courier', 'SA Paribahan', 'Janani Courier'] as $courier) {
+                foreach (Courier::DEFAULT_NAMES as $courier) {
                     Courier::query()->firstOrCreate(['name' => $courier], ['is_default' => false, 'is_active' => true]);
                 }
 

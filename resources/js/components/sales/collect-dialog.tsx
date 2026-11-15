@@ -1,31 +1,31 @@
-import { router } from '@inertiajs/react';
-import { Banknote, Check, ChevronRight } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import InputError from '@/components/input-error';
-import { MoneyInput } from '@/components/money-input';
-import { NativeSelect } from '@/components/native-select';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { router, usePage } from "@inertiajs/react";
+import { Banknote, Check, ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
+import InputError from "@/components/input-error";
+import { MoneyInput } from "@/components/money-input";
+import { NativeSelect } from "@/components/native-select";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Dialog,
     DialogActions,
     DialogBar,
     DialogBody,
     DialogContent,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import type { Paisa } from '@/engine/money';
-import { useDigits } from '@/hooks/use-digits';
-import { useHotkeyScope } from '@/hotkeys/use-hotkeys';
-import { useT } from '@/i18n';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import type { Paisa } from "@/engine/money";
+import { useDigits } from "@/hooks/use-digits";
+import { useHotkeyScope } from "@/hotkeys/use-hotkeys";
+import { useT } from "@/i18n";
 import {
     allocatedTotal,
     allocateOldestFirst,
     allocateSelected,
-} from '@/lib/dues';
-import { openPrint, salesUrl, type MoneyMethod } from '@/lib/sales';
+} from "@/lib/dues";
+import { openPrint, salesUrl, type MoneyMethod } from "@/lib/sales";
 
 export type CollectInvoice = {
     id: number;
@@ -66,27 +66,31 @@ export function CollectDialog({
     };
 }) {
     const { t } = useT();
+    // Branch setting: off = no automatic print window after collecting (the receipt stays one click away).
+    const autoPrint =
+        usePage<{ auth?: { branch_auto_print?: boolean | null } }>().props.auth
+            ?.branch_auto_print !== false;
     const digits = useDigits();
     const totalDue = invoices.reduce((sum, i) => sum + i.due, 0);
     const [amount, setAmount] = useState<Paisa | null>(totalDue);
     const [methodId, setMethodId] = useState<number | null>(
         methods[0]?.id ?? null,
     );
-    const [reference, setReference] = useState('');
-    const [note, setNote] = useState('');
+    const [reference, setReference] = useState("");
+    const [note, setNote] = useState("");
     const [manual, setManual] = useState(false);
     const [moreOpen, setMoreOpen] = useState(false);
     const [selected, setSelected] = useState<Set<number>>(() => new Set());
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [busy, setBusy] = useState(false);
-    useHotkeyScope('dialog', open);
+    useHotkeyScope("dialog", open);
 
     const method = methods.find((m) => m.id === methodId);
     // Reference and note sit under "More" (mockup default view) unless the method needs a reference.
     const showMore =
         moreOpen ||
         method?.requires_reference === true ||
-        errors['reference'] !== undefined;
+        errors["reference"] !== undefined;
     const preview = useMemo(
         () =>
             manual
@@ -140,8 +144,8 @@ export function CollectDialog({
                     const receipt = new URL(
                         page.url,
                         window.location.origin,
-                    ).searchParams.get('receipt');
-                    if (receipt && /^\d+$/.test(receipt)) {
+                    ).searchParams.get("receipt");
+                    if (autoPrint && receipt && /^\d+$/.test(receipt)) {
                         openPrint(salesUrl.paymentReceipt(Number(receipt)));
                     }
                 },
@@ -153,7 +157,7 @@ export function CollectDialog({
         !amount ||
         amount <= 0 ||
         methodId === null ||
-        (method?.requires_reference === true && reference.trim() === '') ||
+        (method?.requires_reference === true && reference.trim() === "") ||
         (manual && advance > 0 && selected.size === 0);
 
     const remaining = Math.max(0, totalDue - (amount ?? 0));
@@ -169,7 +173,7 @@ export function CollectDialog({
                 onOpenAutoFocus={(e) => {
                     // Mockup: the amount takes the focus (Enter collects it).
                     e.preventDefault();
-                    document.getElementById('collect-amount')?.focus();
+                    document.getElementById("collect-amount")?.focus();
                 }}
             >
                 <form
@@ -184,16 +188,16 @@ export function CollectDialog({
                     <DialogBar
                         icon={Banknote}
                         title={title}
-                        closeLabel={t('common.close')}
+                        closeLabel={t("common.close")}
                         subtitle={
                             customer
-                                ? t('dues.collect_customer', {
+                                ? t("dues.collect_customer", {
                                       name: customer.name,
                                       no: customer.customer_no
                                           ? ` (${digits.n(customer.customer_no)})`
-                                          : '',
+                                          : "",
                                   })
-                                : t('dues.collect_hint', {
+                                : t("dues.collect_hint", {
                                       due: digits.money(totalDue),
                                   })
                         }
@@ -202,7 +206,7 @@ export function CollectDialog({
                         <div className="flex items-center justify-between gap-3 rounded-xl border border-warning/30 bg-warning-soft p-3">
                             <div>
                                 <div className="text-[10px] text-muted-foreground">
-                                    {t('dues.outstanding_balance')}
+                                    {t("dues.outstanding_balance")}
                                 </div>
                                 <div className="num font-mono text-lg font-extrabold text-destructive">
                                     {digits.money(totalDue)}
@@ -211,12 +215,12 @@ export function CollectDialog({
                             {customer ? (
                                 <span className="num text-right text-[10px] font-semibold text-warning">
                                     {customer.credit_limit !== null
-                                        ? t('dues.credit_limit_is', {
+                                        ? t("dues.credit_limit_is", {
                                               limit: digits.money(
                                                   customer.credit_limit,
                                               ),
                                           })
-                                        : t('dues.no_limit')}
+                                        : t("dues.no_limit")}
                                 </span>
                             ) : null}
                         </div>
@@ -225,31 +229,31 @@ export function CollectDialog({
                             <div className="flex flex-wrap items-center justify-between gap-2">
                                 <div className="text-xs font-bold text-muted-foreground">
                                     {manual
-                                        ? t('dues.open_invoices_pick')
-                                        : t('dues.open_invoices_oldest')}
+                                        ? t("dues.open_invoices_pick")
+                                        : t("dues.open_invoices_oldest")}
                                 </div>
                                 {invoices.length > 1 ? (
                                     <ToggleGroup
                                         type="single"
                                         variant="outline"
                                         size="sm"
-                                        value={manual ? 'manual' : 'auto'}
+                                        value={manual ? "manual" : "auto"}
                                         onValueChange={(v) =>
-                                            v && setManual(v === 'manual')
+                                            v && setManual(v === "manual")
                                         }
-                                        aria-label={t('dues.allocation')}
+                                        aria-label={t("dues.allocation")}
                                     >
                                         <ToggleGroupItem value="auto">
-                                            {t('dues.oldest_first')}
+                                            {t("dues.oldest_first")}
                                         </ToggleGroupItem>
                                         <ToggleGroupItem value="manual">
-                                            {t('dues.choose_invoices')}
+                                            {t("dues.choose_invoices")}
                                         </ToggleGroupItem>
                                     </ToggleGroup>
                                 ) : null}
                             </div>
                             <ul
-                                aria-label={t('dues.allocation')}
+                                aria-label={t("dues.allocation")}
                                 className="max-h-36 divide-y overflow-y-auto rounded-xl border"
                             >
                                 {invoices.map((invoice) => (
@@ -267,7 +271,7 @@ export function CollectDialog({
                                                         toggle(invoice.id)
                                                     }
                                                     aria-label={t(
-                                                        'dues.pick_invoice',
+                                                        "dues.pick_invoice",
                                                         {
                                                             number: invoice.number,
                                                         },
@@ -280,21 +284,21 @@ export function CollectDialog({
                                             <span className="num text-[10px] text-muted-foreground">
                                                 {digits.n(
                                                     (
-                                                        invoice.sold_at ?? ''
+                                                        invoice.sold_at ?? ""
                                                     ).slice(0, 10),
                                                 )}
                                             </span>
                                         </span>
                                         <span className="flex items-center gap-2">
                                             <span className="num text-muted-foreground">
-                                                {t('dues.due_is', {
+                                                {t("dues.due_is", {
                                                     due: digits.money(
                                                         invoice.due,
                                                     ),
                                                 })}
                                             </span>
                                             <span className="num font-bold text-success">
-                                                {t('dues.alloc_is', {
+                                                {t("dues.alloc_is", {
                                                     amount: digits.money(
                                                         preview.allocations[
                                                             invoice.id
@@ -314,26 +318,26 @@ export function CollectDialog({
                                     htmlFor="collect-amount"
                                     className="text-xs font-semibold text-muted-foreground"
                                 >
-                                    {t('dues.amount_partial')}
+                                    {t("dues.amount_partial")}
                                 </Label>
                                 <MoneyInput
                                     id="collect-amount"
                                     value={amount}
                                     onChange={setAmount}
-                                    invalid={errors['amount'] !== undefined}
+                                    invalid={errors["amount"] !== undefined}
                                 />
-                                <InputError message={errors['amount']} />
+                                <InputError message={errors["amount"]} />
                             </div>
                             <div className="grid gap-1">
                                 <Label
                                     htmlFor="collect-method"
                                     className="text-xs font-semibold text-muted-foreground"
                                 >
-                                    {t('dues.tender')}
+                                    {t("dues.tender")}
                                 </Label>
                                 <NativeSelect
                                     id="collect-method"
-                                    value={methodId ?? ''}
+                                    value={methodId ?? ""}
                                     onChange={(e) =>
                                         setMethodId(
                                             Number(e.target.value) || null,
@@ -347,7 +351,7 @@ export function CollectDialog({
                                     ))}
                                 </NativeSelect>
                                 <InputError
-                                    message={errors['payment_method_id']}
+                                    message={errors["payment_method_id"]}
                                 />
                             </div>
                             {showMore ? (
@@ -357,10 +361,10 @@ export function CollectDialog({
                                             htmlFor="collect-reference"
                                             className="text-xs font-semibold text-muted-foreground"
                                         >
-                                            {t('dues.reference')}
+                                            {t("dues.reference")}
                                             {method?.requires_reference
-                                                ? ' *'
-                                                : ''}
+                                                ? " *"
+                                                : ""}
                                         </Label>
                                         <Input
                                             id="collect-reference"
@@ -371,7 +375,7 @@ export function CollectDialog({
                                             }
                                         />
                                         <InputError
-                                            message={errors['reference']}
+                                            message={errors["reference"]}
                                         />
                                     </div>
                                     <div className="grid gap-1">
@@ -379,7 +383,7 @@ export function CollectDialog({
                                             htmlFor="collect-note"
                                             className="text-xs font-semibold text-muted-foreground"
                                         >
-                                            {t('dues.note')}
+                                            {t("dues.note")}
                                         </Label>
                                         <Input
                                             id="collect-note"
@@ -402,26 +406,26 @@ export function CollectDialog({
                                         className="size-3.5"
                                         aria-hidden="true"
                                     />
-                                    {t('dues.more_fields')}
+                                    {t("dues.more_fields")}
                                 </button>
                             )}
                         </div>
 
                         <div className="flex items-center justify-between rounded-xl bg-surface-sunken p-2.5">
-                            <span>{t('dues.remaining_after')}</span>
+                            <span>{t("dues.remaining_after")}</span>
                             <span className="num font-mono font-bold">
                                 {digits.money(remaining)}
                             </span>
                         </div>
                         {advance > 0 ? (
                             <p className="num text-[11px] text-muted-foreground">
-                                {t('dues.advance_note', {
+                                {t("dues.advance_note", {
                                     amount: digits.money(advance),
                                 })}
                             </p>
                         ) : null}
                         <InputError
-                            message={errors['allocations'] ?? errors['form']}
+                            message={errors["allocations"] ?? errors["form"]}
                         />
                     </DialogBody>
                     <DialogActions className="flex-nowrap">
@@ -432,7 +436,7 @@ export function CollectDialog({
                             disabled={busy}
                             onClick={() => onOpenChange(false)}
                         >
-                            {t('confirm.cancel')}
+                            {t("confirm.cancel")}
                         </Button>
                         <Button
                             type="submit"
@@ -440,7 +444,7 @@ export function CollectDialog({
                             disabled={busy || invalid}
                         >
                             <Check aria-hidden="true" />
-                            {t('dues.collect_confirm')}
+                            {t("dues.collect_confirm")}
                         </Button>
                     </DialogActions>
                 </form>

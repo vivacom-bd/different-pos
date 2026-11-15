@@ -19,6 +19,7 @@ use App\Enums\StockMovementType;
 use App\Events\SaleCompleted;
 use App\Exceptions\Domain\BackdateNotAllowed;
 use App\Exceptions\Domain\BelowCostSale;
+use App\Exceptions\Domain\CourierRequired;
 use App\Exceptions\Domain\CreditLimitExceeded;
 use App\Exceptions\Domain\CustomerRequired;
 use App\Exceptions\Domain\DiscountCapExceeded;
@@ -26,6 +27,7 @@ use App\Exceptions\Domain\InvalidSaleDocument;
 use App\Exceptions\Domain\InvalidTender;
 use App\Exceptions\Domain\MemberPinRequired;
 use App\Exceptions\Domain\PriceOverrideNotAllowed;
+use App\Models\Courier;
 use App\Models\Customer;
 use App\Models\CustomerGroup;
 use App\Models\PaymentMethod;
@@ -165,6 +167,12 @@ final readonly class CompleteSale
                 throw CustomerRequired::forSale();
             }
             $flags[] = 'customer_missing';
+        }
+        if ($exchangeValue === null && $this->courier($draft->courierName) === null && Courier::mustPick()) {
+            if ($origin === SaleOrigin::Web) {
+                throw CourierRequired::forSale();
+            }
+            $flags[] = 'courier_missing';
         }
         $memberAuth = $this->memberAuth($actor, $draft, $customer, $origin, $flags);
         $clientTotals = null;

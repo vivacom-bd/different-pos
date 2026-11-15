@@ -11,22 +11,22 @@ import {
     UserPlus,
     X,
     type LucideIcon,
-} from 'lucide-react';
-import { forwardRef, type ReactNode } from 'react';
-import { Kbd } from '@/components/kbd';
-import type { Paisa } from '@/engine/money';
-import type { CartTotals, LineTotals } from '@/engine/pricing';
-import { QTY_SCALE } from '@/engine/quantity';
-import { useDigits } from '@/hooks/use-digits';
-import { useT } from '@/i18n';
-import { cn } from '@/lib/utils';
-import { breakdownRows, stockTone } from '../present';
+} from "lucide-react";
+import { forwardRef, type ReactNode } from "react";
+import { Kbd } from "@/components/kbd";
+import type { Paisa } from "@/engine/money";
+import type { CartTotals, LineTotals } from "@/engine/pricing";
+import { QTY_SCALE } from "@/engine/quantity";
+import { useDigits } from "@/hooks/use-digits";
+import { useT } from "@/i18n";
+import { cn } from "@/lib/utils";
+import { breakdownRows, stockTone } from "../present";
 import type {
     CartLine,
     CatalogItem,
     CustomerCard,
     MemberAuthState,
-} from '../types';
+} from "../types";
 
 /**
  * The register's presentational pieces in the mockup's layout (render_pos_sales_returns.py, screen 1).
@@ -39,7 +39,7 @@ function useName() {
     const { locale } = useT();
 
     return (item: Named) =>
-        locale === 'bn' && item.name_bn ? item.name_bn : item.name;
+        locale === "bn" && item.name_bn ? item.name_bn : item.name;
 }
 
 /** Category pill (h-7 rounded-full; primary when active). */
@@ -58,10 +58,10 @@ export function CategoryPill({
             aria-pressed={active}
             onClick={onClick}
             className={cn(
-                'touch-target h-7 shrink-0 rounded-full px-3 text-xs font-medium whitespace-nowrap transition-colors',
+                "touch-target h-7 shrink-0 rounded-full px-3 text-xs font-medium whitespace-nowrap transition-colors",
                 active
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'bg-surface-sunken text-muted-foreground hover:text-foreground',
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "bg-surface-sunken text-muted-foreground hover:text-foreground",
             )}
         >
             {children}
@@ -88,18 +88,18 @@ export const CatalogTile = forwardRef<
     const d = useDigits();
     const name = useName();
     const tone = stockTone(item.stock);
-    const family = item.kind === 'family' && item.variants.length > 1;
+    const family = item.kind === "family" && item.variants.length > 1;
     const barcode = item.variants[0]?.barcode ?? null;
 
     return (
         <button
             ref={ref}
             type="button"
-            aria-current={highlighted ? 'true' : undefined}
+            aria-current={highlighted ? "true" : undefined}
             tabIndex={tabIndex}
             className={cn(
-                'group relative flex h-[122px] flex-col justify-between rounded-xl border bg-surface p-2.5 text-left transition-all select-none hover:border-primary hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
-                highlighted && 'border-primary bg-primary-soft',
+                "group relative flex h-[122px] flex-col justify-between rounded-xl border bg-surface p-2.5 text-left transition-all select-none hover:border-primary hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                highlighted && "border-primary bg-primary-soft",
             )}
             onClick={onChoose}
             onFocus={onFocus}
@@ -118,16 +118,16 @@ export const CatalogTile = forwardRef<
                         {tone && item.stock !== null && (
                             <span
                                 className={cn(
-                                    'num shrink-0 rounded px-1.5 text-[9px] font-bold',
-                                    tone === 'danger' &&
-                                        'bg-danger-soft text-danger',
-                                    tone === 'warning' &&
-                                        'bg-warning-soft text-warning',
-                                    tone === 'success' &&
-                                        'bg-success-soft text-success',
+                                    "num shrink-0 rounded px-1.5 text-[9px] font-bold",
+                                    tone === "danger" &&
+                                        "bg-danger-soft text-danger",
+                                    tone === "warning" &&
+                                        "bg-warning-soft text-warning",
+                                    tone === "success" &&
+                                        "bg-success-soft text-success",
                                 )}
                             >
-                                {t('pos.stock.left', {
+                                {t("pos.stock.left", {
                                     qty: d.qty(Math.max(0, item.stock)),
                                 })}
                             </span>
@@ -142,13 +142,13 @@ export const CatalogTile = forwardRef<
                 {family ? (
                     <span className="flex items-center gap-1 text-[10px] font-semibold text-primary">
                         <LayoutGrid className="size-2.5" aria-hidden="true" />
-                        {t('pos.catalog.variants', {
+                        {t("pos.catalog.variants", {
                             count: item.variants.length,
                         })}
                     </span>
                 ) : (
                     <span className="truncate font-mono text-[10px] text-muted-foreground">
-                        {barcode ?? ''}
+                        {barcode ?? ""}
                     </span>
                 )}
                 <span className="num text-xs font-bold text-primary">
@@ -164,7 +164,7 @@ export function FnButton({
     icon: Icon,
     label,
     keys,
-    tone = 'default',
+    tone = "default",
     disabled,
     title,
     iconOnly = false,
@@ -173,7 +173,7 @@ export function FnButton({
     icon: LucideIcon;
     label: string;
     keys?: string;
-    tone?: 'default' | 'warning' | 'danger';
+    tone?: "default" | "warning" | "danger";
     disabled?: boolean;
     title?: string | undefined;
     /** Mockup trash button: the icon alone (the label stays as the accessible name and tooltip). */
@@ -187,25 +187,25 @@ export function FnButton({
             title={title ?? (iconOnly ? label : undefined)}
             onClick={onClick}
             className={cn(
-                'touch-target flex items-center gap-1 rounded px-1.5 py-1 text-left leading-tight font-medium disabled:opacity-40 max-md:min-w-0 max-md:flex-col max-md:justify-center max-md:gap-0.5 max-md:px-1 max-md:text-center',
-                tone === 'default' && 'border bg-surface hover:border-primary',
-                tone === 'warning' &&
-                    'border border-warning/30 bg-warning-soft text-warning',
-                tone === 'danger' &&
-                    'bg-danger-soft text-danger hover:bg-danger hover:text-primary-foreground',
+                "touch-target flex items-center gap-1 rounded px-1.5 py-1 text-left leading-tight font-medium disabled:opacity-40 max-md:min-w-0 max-md:flex-col max-md:justify-center max-md:gap-0.5 max-md:px-1 max-md:text-center",
+                tone === "default" && "border bg-surface hover:border-primary",
+                tone === "warning" &&
+                    "border border-warning/30 bg-warning-soft text-warning",
+                tone === "danger" &&
+                    "bg-danger-soft text-danger hover:bg-danger hover:text-primary-foreground",
             )}
         >
             <Icon className="size-3 shrink-0" aria-hidden="true" />
             <span
                 className={cn(
-                    iconOnly && 'sr-only max-md:not-sr-only',
-                    'max-md:break-words',
+                    iconOnly && "sr-only max-md:not-sr-only",
+                    "max-md:break-words",
                 )}
             >
                 {label}
             </span>
             {keys &&
-                (keys.startsWith('shift+') ? (
+                (keys.startsWith("shift+") ? (
                     // Mockup keycap "⇧F8": the long "Shift+F8" would push the bar off screen.
                     <kbd
                         aria-hidden="true"
@@ -232,30 +232,30 @@ export function MemberPinChip({
 }: {
     customer: CustomerCard;
     member: MemberAuthState | null;
-    policy: 'off' | 'optional' | 'required';
+    policy: "off" | "optional" | "required";
 }) {
     const { t } = useT();
     const own =
         member !== null && member.customerId === customer.id ? member : null;
     const tone =
-        own?.kind === 'pin_online' || own?.kind === 'override'
-            ? 'bg-success-soft text-success'
-            : customer.pin_status === 'locked' ||
-                (policy === 'required' && own === null)
-              ? 'bg-danger-soft text-danger'
-              : 'bg-warning-soft text-warning';
+        own?.kind === "pin_online" || own?.kind === "override"
+            ? "bg-success-soft text-success"
+            : customer.pin_status === "locked" ||
+                (policy === "required" && own === null)
+              ? "bg-danger-soft text-danger"
+              : "bg-warning-soft text-warning";
     const label =
-        own?.kind === 'pin_online'
-            ? t('pos.pin.chip_verified')
-            : own?.kind === 'override'
-              ? t('pos.pin.chip_override', { name: own.managerName })
-              : customer.pin_status === 'locked'
-                ? t('pos.pin.chip_locked')
-                : customer.pin_status === 'pending'
-                  ? t('pos.pin.chip_not_set')
-                  : own?.kind === 'skipped'
-                    ? t('pos.pin.chip_skipped')
-                    : t('pos.pin.chip_unverified');
+        own?.kind === "pin_online"
+            ? t("pos.pin.chip_verified")
+            : own?.kind === "override"
+              ? t("pos.pin.chip_override", { name: own.managerName })
+              : customer.pin_status === "locked"
+                ? t("pos.pin.chip_locked")
+                : customer.pin_status === "pending"
+                  ? t("pos.pin.chip_not_set")
+                  : own?.kind === "skipped"
+                    ? t("pos.pin.chip_skipped")
+                    : t("pos.pin.chip_unverified");
 
     return (
         <span
@@ -270,15 +270,18 @@ export function MemberPinChip({
 export function CustomerStrip({
     customer,
     member = null,
-    pinPolicy = 'off',
+    pinPolicy = "off",
     onPin,
     onOpen,
     onCollect,
     onDetach,
+    required = false,
 }: {
+    /** The tenant requires a named customer on every sale: the empty strip says so instead of "Walk-in". */
+    required?: boolean;
     customer: CustomerCard | null;
     member?: MemberAuthState | null;
-    pinPolicy?: 'off' | 'optional' | 'required';
+    pinPolicy?: "off" | "optional" | "required";
     /** Alt+P: verify / set the member's PIN. */
     onPin?: () => void;
     onOpen: () => void;
@@ -298,10 +301,18 @@ export function CustomerStrip({
                     onClick={onOpen}
                 >
                     <UserPlus className="size-3.5" aria-hidden="true" />
-                    {t('pos.customer.attach_member')}
-                    <span className="font-normal opacity-80">
-                        · {t('pos.customer.walk_in')}
-                    </span>
+                    {required ? (
+                        <span data-testid="customer-required">
+                            {t("pos.customer.required_placeholder")}
+                        </span>
+                    ) : (
+                        <>
+                            {t("pos.customer.attach_member")}
+                            <span className="font-normal opacity-80">
+                                · {t("pos.customer.walk_in")}
+                            </span>
+                        </>
+                    )}
                     <Kbd keys="f4" className="text-[9px]" />
                 </button>
             </div>
@@ -317,7 +328,7 @@ export function CustomerStrip({
                 type="button"
                 className="flex min-w-0 flex-1 items-center gap-2 text-left transition-opacity hover:opacity-80"
                 onClick={onOpen}
-                aria-label={t('pos.customer.change', { name: name(customer) })}
+                aria-label={t("pos.customer.change", { name: name(customer) })}
             >
                 <span
                     className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-bold text-primary"
@@ -348,7 +359,7 @@ export function CustomerStrip({
                             <>
                                 <span aria-hidden="true">·</span>
                                 <span className="num font-semibold text-danger">
-                                    {t('pos.customer.due', {
+                                    {t("pos.customer.due", {
                                         amount: d.money(customer.balance),
                                     })}
                                 </span>
@@ -358,7 +369,7 @@ export function CustomerStrip({
                             <>
                                 <span aria-hidden="true">·</span>
                                 <span className="num font-semibold text-success">
-                                    {t('pos.customer.credit', {
+                                    {t("pos.customer.credit", {
                                         amount: d.money(customer.advance),
                                     })}
                                 </span>
@@ -370,7 +381,7 @@ export function CustomerStrip({
                                 {groupPct > 0 && ` −${d.n(groupPct)}%`}
                             </span>
                         )}
-                        {pinPolicy !== 'off' && (
+                        {pinPolicy !== "off" && (
                             <MemberPinChip
                                 customer={customer}
                                 member={member}
@@ -381,13 +392,13 @@ export function CustomerStrip({
                 </span>
             </button>
             <span className="ml-2 flex shrink-0 items-center gap-1">
-                {onPin && pinPolicy !== 'off' && (
+                {onPin && pinPolicy !== "off" && (
                     <button
                         type="button"
                         onClick={onPin}
                         className="touch-target flex h-7 items-center gap-1 rounded border px-2 text-[10px] font-bold text-muted-foreground hover:bg-surface"
-                        aria-label={t('pos.pin.action')}
-                        title={`${t('pos.pin.action')} (Alt+P)`}
+                        aria-label={t("pos.pin.action")}
+                        title={`${t("pos.pin.action")} (Alt+P)`}
                     >
                         <KeyRound className="size-3" aria-hidden="true" />
                     </button>
@@ -399,7 +410,7 @@ export function CustomerStrip({
                         className="touch-target flex h-7 items-center gap-1 rounded border border-warning/30 bg-warning/10 px-2 text-[10px] font-bold text-warning hover:bg-warning/20"
                     >
                         <Banknote className="size-3" aria-hidden="true" />
-                        {t('pos.customer.collect')}
+                        {t("pos.customer.collect")}
                     </button>
                 )}
                 <Kbd keys="f4" className="text-[9px]" />
@@ -407,8 +418,8 @@ export function CustomerStrip({
                     type="button"
                     onClick={onDetach}
                     className="touch-target rounded p-1 text-muted-foreground hover:bg-surface"
-                    aria-label={t('pos.customer.detach')}
-                    title={t('pos.customer.detach')}
+                    aria-label={t("pos.customer.detach")}
+                    title={t("pos.customer.detach")}
                 >
                     <X className="size-3.5" aria-hidden="true" />
                 </button>
@@ -421,40 +432,37 @@ export function CustomerStrip({
 export function BillHead() {
     const { t } = useT();
     const th =
-        'sticky top-0 z-[1] bg-surface-sunken px-2 py-2 text-[11px] font-semibold text-muted-foreground';
+        "sticky top-0 z-[1] bg-surface-sunken px-2 py-2 text-[11px] font-semibold text-muted-foreground";
 
     return (
         <thead className="max-md:sr-only">
             <tr className="border-b">
-                <th scope="col" className={cn(th, 'w-8 pl-3 text-center')}>
-                    {t('pos.bill.col_no')}
+                <th scope="col" className={cn(th, "w-8 pl-3 text-center")}>
+                    {t("pos.bill.col_no")}
                 </th>
-                <th scope="col" className={cn(th, 'text-left')}>
-                    {t('pos.bill.col_item')}
+                <th scope="col" className={cn(th, "text-left")}>
+                    {t("pos.bill.col_item")}
                 </th>
-                <th scope="col" className={cn(th, 'text-right')}>
-                    {t('pos.bill.col_price')}
+                <th scope="col" className={cn(th, "text-right")}>
+                    {t("pos.bill.col_price")}
                 </th>
-                <th scope="col" className={cn(th, 'w-32 text-center')}>
-                    {t('pos.bill.col_qty')}
+                <th scope="col" className={cn(th, "w-32 text-center")}>
+                    {t("pos.bill.col_qty")}
                 </th>
-                <th
-                    scope="col"
-                    className={cn(th, 'text-right max-md:hidden')}
-                >
-                    {t('pos.bill.col_available')}
+                <th scope="col" className={cn(th, "text-right max-md:hidden")}>
+                    {t("pos.bill.col_available")}
                 </th>
-                <th scope="col" className={cn(th, 'text-right')}>
-                    {t('pos.bill.col_disc')}
+                <th scope="col" className={cn(th, "text-right")}>
+                    {t("pos.bill.col_disc")}
                 </th>
-                <th scope="col" className={cn(th, 'text-right')}>
-                    {t('pos.bill.col_vat')}
+                <th scope="col" className={cn(th, "text-right")}>
+                    {t("pos.bill.col_vat")}
                 </th>
-                <th scope="col" className={cn(th, 'text-right')}>
-                    {t('pos.bill.col_total')}
+                <th scope="col" className={cn(th, "text-right")}>
+                    {t("pos.bill.col_total")}
                 </th>
-                <th scope="col" className={cn(th, 'w-9 pr-3')}>
-                    <span className="sr-only">{t('pos.keys.remove')}</span>
+                <th scope="col" className={cn(th, "w-9 pr-3")}>
+                    <span className="sr-only">{t("pos.keys.remove")}</span>
                 </th>
             </tr>
         </thead>
@@ -474,7 +482,7 @@ export const BillLine = forwardRef<
         onStep: (delta: number) => void;
         onDiscount: () => void;
         onRemove: () => void;
-    } & Omit<React.ComponentProps<'tr'>, 'onSelect'>
+    } & Omit<React.ComponentProps<"tr">, "onSelect">
 >(function BillLine(
     {
         index,
@@ -500,11 +508,11 @@ export const BillLine = forwardRef<
             ? Math.round(lineTotal / qtyUnits)
             : line.unitPrice;
     const chip =
-        line.discount.type === 'percent_bp'
+        line.discount.type === "percent_bp"
             ? `−${d.n(line.discount.value / 100)}%`
             : `−${d.money(discount)}`;
     const step = QTY_SCALE;
-    const td = 'px-2 py-2.5 align-middle';
+    const td = "px-2 py-2.5 align-middle";
 
     return (
         <tr
@@ -513,14 +521,14 @@ export const BillLine = forwardRef<
             tabIndex={0}
             aria-selected={selected}
             className={cn(
-                'cursor-pointer transition-colors select-none hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring max-md:grid max-md:grid-cols-[auto_1fr_auto_auto] max-md:items-center max-md:gap-x-2 max-md:gap-y-1 max-md:px-3 max-md:py-2',
-                selected && 'bg-primary-soft/60 hover:bg-primary-soft/60',
+                "cursor-pointer transition-colors select-none hover:bg-surface-sunken focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring max-md:grid max-md:grid-cols-[auto_1fr_auto_auto] max-md:items-center max-md:gap-x-2 max-md:gap-y-1 max-md:px-3 max-md:py-2",
+                selected && "bg-primary-soft/60 hover:bg-primary-soft/60",
             )}
             onClick={onSelect}
             onFocus={onSelect}
             onDoubleClick={onQty}
             onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.target === e.currentTarget) {
+                if (e.key === "Enter" && e.target === e.currentTarget) {
                     e.preventDefault();
                     onQty();
                 }
@@ -529,7 +537,7 @@ export const BillLine = forwardRef<
             <td
                 className={cn(
                     td,
-                    'num pl-3 text-center font-mono text-[11px] text-muted-foreground max-md:col-start-1 max-md:row-start-1 max-md:p-0',
+                    "num pl-3 text-center font-mono text-[11px] text-muted-foreground max-md:col-start-1 max-md:row-start-1 max-md:p-0",
                 )}
             >
                 {d.n(index + 1)}
@@ -537,7 +545,7 @@ export const BillLine = forwardRef<
             <td
                 className={cn(
                     td,
-                    'max-w-0 min-w-40 max-md:col-span-2 max-md:col-start-2 max-md:row-start-1 max-md:max-w-none max-md:min-w-0 max-md:p-0',
+                    "max-w-0 min-w-40 max-md:col-span-2 max-md:col-start-2 max-md:row-start-1 max-md:max-w-none max-md:min-w-0 max-md:p-0",
                 )}
             >
                 <div className="truncate text-xs leading-tight font-semibold text-foreground">
@@ -560,7 +568,7 @@ export const BillLine = forwardRef<
             <td
                 className={cn(
                     td,
-                    'text-right whitespace-nowrap max-md:col-span-2 max-md:col-start-1 max-md:row-start-2 max-md:p-0 max-md:text-left',
+                    "text-right whitespace-nowrap max-md:col-span-2 max-md:col-start-1 max-md:row-start-2 max-md:p-0 max-md:text-left",
                 )}
             >
                 {discount > 0 ? (
@@ -581,7 +589,7 @@ export const BillLine = forwardRef<
             <td
                 className={cn(
                     td,
-                    'max-md:col-start-3 max-md:row-start-2 max-md:p-0',
+                    "max-md:col-start-3 max-md:row-start-2 max-md:p-0",
                 )}
             >
                 <div className="flex items-center justify-center gap-1">
@@ -592,7 +600,7 @@ export const BillLine = forwardRef<
                             onStep(-step);
                         }}
                         className="touch-target flex size-6 items-center justify-center rounded border bg-surface-sunken text-foreground hover:bg-border"
-                        aria-label={t('qty.decrease')}
+                        aria-label={t("qty.decrease")}
                     >
                         <Minus className="size-3" aria-hidden="true" />
                     </button>
@@ -603,8 +611,8 @@ export const BillLine = forwardRef<
                             onQty();
                         }}
                         className="num touch-target h-6 min-w-10 rounded border bg-surface px-1 text-center font-mono text-xs font-bold"
-                        aria-label={t('pos.bill.qty_of', { name: line.name })}
-                        title={t('pos.keys.qty')}
+                        aria-label={t("pos.bill.qty_of", { name: line.name })}
+                        title={t("pos.keys.qty")}
                     >
                         {d.qty(line.qty)}
                     </button>
@@ -615,7 +623,7 @@ export const BillLine = forwardRef<
                             onStep(step);
                         }}
                         className="touch-target flex size-6 items-center justify-center rounded border bg-surface-sunken text-foreground hover:bg-border"
-                        aria-label={t('qty.increase')}
+                        aria-label={t("qty.increase")}
                     >
                         <Plus className="size-3" aria-hidden="true" />
                     </button>
@@ -624,16 +632,16 @@ export const BillLine = forwardRef<
             <td
                 className={cn(
                     td,
-                    'num text-right text-[11px] whitespace-nowrap max-md:hidden',
+                    "num text-right text-[11px] whitespace-nowrap max-md:hidden",
                     line.stock !== null && line.stock <= 0
-                        ? 'font-semibold text-danger'
-                        : 'text-muted-foreground',
+                        ? "font-semibold text-danger"
+                        : "text-muted-foreground",
                 )}
                 data-testid="bill-available"
             >
-                {line.stock === null ? '–' : d.qty(line.stock)}
+                {line.stock === null ? "–" : d.qty(line.stock)}
             </td>
-            <td className={cn(td, 'text-right max-md:hidden')}>
+            <td className={cn(td, "text-right max-md:hidden")}>
                 <button
                     type="button"
                     onClick={(e) => {
@@ -641,27 +649,27 @@ export const BillLine = forwardRef<
                         onDiscount();
                     }}
                     className={cn(
-                        'touch-target inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold transition-colors hover:border-primary',
+                        "touch-target inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-bold transition-colors hover:border-primary",
                         discount > 0
-                            ? 'border-danger/30 bg-danger-soft text-danger'
-                            : 'bg-surface-sunken text-muted-foreground hover:text-primary',
+                            ? "border-danger/30 bg-danger-soft text-danger"
+                            : "bg-surface-sunken text-muted-foreground hover:text-primary",
                     )}
-                    title={t('pos.keys.line_discount')}
+                    title={t("pos.keys.line_discount")}
                 >
                     <Percent className="size-2.5" aria-hidden="true" />
-                    {discount > 0 ? chip : t('pos.bill.disc')}
+                    {discount > 0 ? chip : t("pos.bill.disc")}
                 </button>
             </td>
             <td
                 className={cn(
                     td,
-                    'text-right text-[11px] whitespace-nowrap text-muted-foreground max-md:hidden',
+                    "text-right text-[11px] whitespace-nowrap text-muted-foreground max-md:hidden",
                 )}
             >
                 <span className="num block">{d.money(priced?.tax ?? 0)}</span>
                 {line.taxRateBp > 0 && (
                     <span className="block text-[9px]">
-                        {t('pos.bill.vat_rate', {
+                        {t("pos.bill.vat_rate", {
                             pct: d.n(line.taxRateBp / 100),
                         })}
                     </span>
@@ -670,7 +678,7 @@ export const BillLine = forwardRef<
             <td
                 className={cn(
                     td,
-                    'text-right whitespace-nowrap max-md:col-start-4 max-md:row-start-2 max-md:p-0',
+                    "text-right whitespace-nowrap max-md:col-start-4 max-md:row-start-2 max-md:p-0",
                 )}
             >
                 <span className="num text-xs font-bold text-foreground">
@@ -680,7 +688,7 @@ export const BillLine = forwardRef<
             <td
                 className={cn(
                     td,
-                    'pr-3 text-center max-md:col-start-4 max-md:row-start-1 max-md:p-0',
+                    "pr-3 text-center max-md:col-start-4 max-md:row-start-1 max-md:p-0",
                 )}
             >
                 <button
@@ -690,8 +698,8 @@ export const BillLine = forwardRef<
                         onRemove();
                     }}
                     className="touch-target rounded p-1 text-muted-foreground hover:bg-danger-soft hover:text-danger"
-                    aria-label={t('pos.bill.remove', { name: line.name })}
-                    title={t('pos.keys.remove')}
+                    aria-label={t("pos.bill.remove", { name: line.name })}
+                    title={t("pos.keys.remove")}
                 >
                     <X className="size-3.5" aria-hidden="true" />
                 </button>
@@ -711,7 +719,7 @@ export function ProductThumb({
     return (
         <span
             className={cn(
-                'flex shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-surface-sunken text-primary',
+                "flex shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-surface-sunken text-primary",
                 className,
             )}
         >
@@ -747,17 +755,17 @@ export function SearchHit({
     const d = useDigits();
     const name = useName();
     const tone = stockTone(item.stock);
-    const family = item.kind === 'family' && item.variants.length > 1;
+    const family = item.kind === "family" && item.variants.length > 1;
 
     return (
         <li id={id}>
             <button
                 type="button"
                 tabIndex={-1}
-                aria-current={active ? 'true' : undefined}
+                aria-current={active ? "true" : undefined}
                 className={cn(
-                    'flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left',
-                    active ? 'bg-primary-soft' : 'hover:bg-surface-sunken',
+                    "flex w-full items-center gap-2.5 px-2.5 py-1.5 text-left",
+                    active ? "bg-primary-soft" : "hover:bg-surface-sunken",
                 )}
                 // Keep the focus in the scan field: the click must not blur it first.
                 onMouseDown={(e) => e.preventDefault()}
@@ -777,7 +785,7 @@ export function SearchHit({
                                     className="size-2.5"
                                     aria-hidden="true"
                                 />
-                                {t('pos.catalog.variants', {
+                                {t("pos.catalog.variants", {
                                     count: item.variants.length,
                                 })}
                             </span>
@@ -787,15 +795,15 @@ export function SearchHit({
                 {tone && item.stock !== null && (
                     <span
                         className={cn(
-                            'num shrink-0 rounded px-1.5 text-[9px] font-bold',
-                            tone === 'danger' && 'bg-danger-soft text-danger',
-                            tone === 'warning' &&
-                                'bg-warning-soft text-warning',
-                            tone === 'success' &&
-                                'bg-success-soft text-success',
+                            "num shrink-0 rounded px-1.5 text-[9px] font-bold",
+                            tone === "danger" && "bg-danger-soft text-danger",
+                            tone === "warning" &&
+                                "bg-warning-soft text-warning",
+                            tone === "success" &&
+                                "bg-success-soft text-success",
                         )}
                     >
-                        {t('pos.stock.left', {
+                        {t("pos.stock.left", {
                             qty: d.qty(Math.max(0, item.stock)),
                         })}
                     </span>
@@ -818,16 +826,16 @@ export function EmptyBill({ onBrowse }: { onBrowse: () => void }) {
                 <ShoppingCart className="size-7" aria-hidden="true" />
             </span>
             <p className="text-sm font-semibold text-foreground">
-                {t('pos.bill.empty_title')}
+                {t("pos.bill.empty_title")}
             </p>
-            <p className="mt-1 max-w-xs text-xs">{t('pos.bill.empty_hint')}</p>
+            <p className="mt-1 max-w-xs text-xs">{t("pos.bill.empty_hint")}</p>
             <button
                 type="button"
                 onClick={onBrowse}
                 className="touch-target mt-4 flex h-9 items-center gap-1.5 rounded-lg border bg-surface px-3 text-xs font-semibold text-foreground hover:border-primary"
             >
                 <LayoutGrid className="size-3.5" aria-hidden="true" />
-                {t('pos.catalog.browse')}
+                {t("pos.catalog.browse")}
                 <Kbd keys="alt+g" className="text-[10px]" />
             </button>
         </div>
@@ -869,44 +877,44 @@ export function Breakdown({
         >
             {breakdownRows(totals).map((row) => {
                 switch (row.id) {
-                    case 'subtotal':
+                    case "subtotal":
                         return (
                             <div
                                 key={row.id}
                                 className="flex justify-between text-muted-foreground"
                             >
                                 <span>
-                                    {t('pos.totals.subtotal', { count: pcs })}
+                                    {t("pos.totals.subtotal", { count: pcs })}
                                 </span>
                                 <span className="num">{money(row.amount)}</span>
                             </div>
                         );
-                    case 'line_discount':
+                    case "line_discount":
                         return (
                             <div
                                 key={row.id}
                                 className={cn(
-                                    'flex justify-between',
+                                    "flex justify-between",
                                     row.amount > 0
-                                        ? 'text-danger'
-                                        : 'text-muted-foreground',
+                                        ? "text-danger"
+                                        : "text-muted-foreground",
                                 )}
                             >
-                                <span>{t('pos.totals.line_discounts')}</span>
+                                <span>{t("pos.totals.line_discounts")}</span>
                                 <span className="num">
                                     {money(row.amount, row.amount > 0)}
                                 </span>
                             </div>
                         );
-                    case 'group_discount':
+                    case "group_discount":
                         return (
                             <div
                                 key={row.id}
                                 className="flex justify-between text-primary"
                             >
                                 <span>
-                                    {t('pos.totals.group_discount', {
-                                        group: groupName ?? '',
+                                    {t("pos.totals.group_discount", {
+                                        group: groupName ?? "",
                                     })}
                                 </span>
                                 <span className="num">
@@ -914,7 +922,7 @@ export function Breakdown({
                                 </span>
                             </div>
                         );
-                    case 'order_discount':
+                    case "order_discount":
                         return (
                             <div
                                 key={row.id}
@@ -925,7 +933,7 @@ export function Breakdown({
                                         className="size-3 text-primary"
                                         aria-hidden="true"
                                     />
-                                    {t('pos.totals.order_discount')}
+                                    {t("pos.totals.order_discount")}
                                 </span>
                                 {row.amount > 0 ? (
                                     <span className="flex items-center gap-1.5">
@@ -939,7 +947,7 @@ export function Breakdown({
                                             className="touch-target text-[10px] font-bold text-danger hover:underline"
                                             onClick={onRemoveOrderDiscount}
                                         >
-                                            × {t('pos.totals.remove')}
+                                            × {t("pos.totals.remove")}
                                         </button>
                                     </span>
                                 ) : (
@@ -953,7 +961,7 @@ export function Breakdown({
                                             className="size-3"
                                             aria-hidden="true"
                                         />
-                                        {t('pos.totals.add_order_discount')}
+                                        {t("pos.totals.add_order_discount")}
                                         <Kbd
                                             keys="shift+f6"
                                             className="border-transparent bg-transparent p-0 text-[10px] text-primary"
@@ -962,7 +970,7 @@ export function Breakdown({
                                 )}
                             </div>
                         );
-                    case 'vat':
+                    case "vat":
                         return (
                             <div
                                 key={row.id}
@@ -970,30 +978,30 @@ export function Breakdown({
                             >
                                 <span>
                                     {taxInclusive
-                                        ? t('pos.totals.vat_included')
-                                        : t('pos.totals.vat_after')}
+                                        ? t("pos.totals.vat_included")
+                                        : t("pos.totals.vat_after")}
                                 </span>
                                 <span className="num">{money(row.amount)}</span>
                             </div>
                         );
-                    case 'rounding':
+                    case "rounding":
                         return (
                             <div
                                 key={row.id}
                                 className="flex justify-between text-muted-foreground"
                             >
-                                <span>{t('pos.totals.rounding')}</span>
+                                <span>{t("pos.totals.rounding")}</span>
                                 <span className="num">{money(row.amount)}</span>
                             </div>
                         );
-                    case 'total':
+                    case "total":
                         return (
                             <div
                                 key={row.id}
                                 className="flex items-baseline justify-between border-t pt-2"
                             >
                                 <span className="text-sm font-bold text-foreground">
-                                    {t('pos.totals.payable')}
+                                    {t("pos.totals.payable")}
                                 </span>
                                 <span className="num text-2xl font-extrabold tracking-tight text-primary xl:text-3xl">
                                     {money(row.amount)}
@@ -1013,11 +1021,14 @@ export function PayBar({
     total,
     pcs,
     disabled,
+    disabledReason,
     onPay,
 }: {
     total: Paisa;
     pcs: string;
     disabled: boolean;
+    /** Why Pay is disabled (tooltip); shown only while disabled. */
+    disabledReason?: string | undefined;
     onPay: () => void;
 }) {
     const { t } = useT();
@@ -1028,8 +1039,9 @@ export function PayBar({
             <button
                 type="button"
                 disabled={disabled}
+                title={disabled ? disabledReason : undefined}
                 onClick={onPay}
-                aria-label={t('pos.actions.pay', { amount: d.money(total) })}
+                aria-label={t("pos.actions.pay", { amount: d.money(total) })}
                 className="flex h-14 w-full items-center justify-between rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-md transition-colors hover:bg-primary-hover disabled:opacity-40"
             >
                 <span className="flex items-center gap-2.5">
@@ -1042,12 +1054,12 @@ export function PayBar({
                     <span className="text-left">
                         <span className="flex items-center gap-2">
                             <span className="text-base tracking-wide">
-                                {t('pos.paybar.pay')}
+                                {t("pos.paybar.pay")}
                             </span>
                             <Kbd keys="f9" tone="on-primary" />
                         </span>
                         <span className="block text-[11px] font-normal opacity-90">
-                            {t('pos.paybar.hint')}
+                            {t("pos.paybar.hint")}
                         </span>
                     </span>
                 </span>
@@ -1056,7 +1068,7 @@ export function PayBar({
                         {d.money(total)}
                     </span>
                     <span className="block text-[10px] opacity-80">
-                        {t('pos.paybar.items', { count: pcs })}
+                        {t("pos.paybar.items", { count: pcs })}
                     </span>
                 </span>
             </button>

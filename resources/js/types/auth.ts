@@ -25,6 +25,8 @@ export type Auth = {
     /** Display names of the user's roles in the current tenant (sidebar "Active role" card, status bar); optional until the server shares it. */
     roles?: string[];
     /** The current branch's default receipt paper (null = the device default). */
+    /** The current branch's "print after each action" setting; false stops every automatic print window. */
+    branch_auto_print?: boolean | null;
     branch_paper?: '80' | '58' | 'a4' | null;
     [key: string]: unknown;
 };

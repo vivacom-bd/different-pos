@@ -9,6 +9,7 @@ use App\Actions\Tenancy\SeedTenantRoles;
 use App\Enums\PaymentMethodType;
 use App\Exceptions\Domain\InvalidAdminData;
 use App\Models\Branch;
+use App\Models\Courier;
 use App\Models\Customer;
 use App\Models\PaymentMethod;
 use App\Models\Register;
@@ -104,6 +105,10 @@ final readonly class ProvisionTenant
                 Unit::query()->create(['name' => 'Piece', 'short_name' => 'pcs', 'allows_decimal' => false, 'is_active' => true]);
                 foreach (['m' => 'Metre', 'yd' => 'Yard', 'kg' => 'Kilogram'] as $short => $name) {
                     Unit::query()->create(['name' => $name, 'short_name' => $short, 'allows_decimal' => true, 'is_active' => true]);
+                }
+
+                foreach (Courier::DEFAULT_NAMES as $courierName) {
+                    Courier::query()->create(['name' => $courierName, 'is_default' => false, 'is_active' => true]);
                 }
 
                 $this->roles->handle($tenant);

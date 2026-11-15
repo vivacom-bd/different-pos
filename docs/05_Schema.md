@@ -492,7 +492,7 @@ payment_methods [tenant]
   requires_reference BOOL DEFAULT 0, sort_order INT, is_active BOOL DEFAULT 1, timestamps
   -- seeded: Cash, Card, bKash, Nagad, Rocket, Bank transfer, Customer credit, Exchange credit (system, no account)
 
-couriers [tenant]                           -- delivery couriers; sales keep the courier as text (sales.courier_name), no FK
+couriers [tenant]                           -- delivery couriers (migration `2026_11_15_000100_seed_default_couriers` gives every tenant with none the 10 common BD couriers, active, none default; idempotent; `ProvisionTenant` and the demo seeder create the same list from `Courier::DEFAULT_NAMES`; with active couriers and no default the online register requires a courier, a device sale is flagged `courier_missing`); sales keep the courier as text (sales.courier_name), no FK
   id, tenant_id, name VARCHAR(80), phone VARCHAR(30) NULL, is_default BOOL DEFAULT 0, is_active BOOL DEFAULT 1, timestamps
   default_guard BIGINT UNSIGNED NULL VIRTUAL = IF(is_default=1, tenant_id, NULL) UNIQUE   -- at most one default per tenant
   UNIQUE(tenant_id, name)                  -- not Syncable: the POS never pulls it; SaveCourier/SetDefaultCourier clear the old default under lock
