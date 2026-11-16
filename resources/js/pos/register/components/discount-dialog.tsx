@@ -184,7 +184,7 @@ function DiscountBody({
     const { t } = useT();
     const d = useDigits();
     const [tab, setTab] = useState<DiscountTab>(
-        current.type === 'amount' ? 'amount' : 'percent_bp',
+        current.type === 'percent_bp' ? 'percent_bp' : 'amount',
     );
     const [percent, setPercent] = useState(
         current.type === 'percent_bp' ? bpText(current.value) : '',
@@ -269,7 +269,7 @@ function DiscountBody({
                 apply();
             }}
         >
-            {/* Tabs: % · ৳ amount · Set price */}
+            {/* Tabs: ৳ amount (default) · % · Set price */}
             <div
                 role="tablist"
                 aria-label={t('pos.discount.mode')}
@@ -277,8 +277,8 @@ function DiscountBody({
             >
                 {(
                     [
-                        ['percent_bp', t('pos.discount.tab_percent')],
                         ['amount', t('pos.discount.tab_amount')],
+                        ['percent_bp', t('pos.discount.tab_percent')],
                         ['set_price', t('pos.discount.tab_set_price')],
                     ] as const
                 ).map(([key, label]) => (

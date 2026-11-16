@@ -140,10 +140,19 @@ describe('DiscountDialog', () => {
         expect(screen.getByText(t('pos.discount.bill_title'))).toBeTruthy();
         expect(screen.getByText(t('pos.discount.bill_subject'))).toBeTruthy();
         expect(screen.getAllByRole('tab').map((e) => e.textContent)).toEqual([
-            t('pos.discount.tab_percent'),
             t('pos.discount.tab_amount'),
+            t('pos.discount.tab_percent'),
             t('pos.discount.tab_set_price'),
         ]);
+        // Amount (৳) is the default tab.
+        expect(
+            screen
+                .getByRole('tab', { name: t('pos.discount.tab_amount') })
+                .getAttribute('aria-selected'),
+        ).toBe('true');
+        expect(
+            screen.getByLabelText(t('pos.discount.entry_amount')),
+        ).toBeTruthy();
         for (const pct of [5, 10, 15, 20]) {
             expect(
                 screen.getByRole('button', { name: `${pct} %` }),
@@ -184,6 +193,9 @@ describe('DiscountDialog', () => {
 
     it('typing a percent and pressing Enter applies; Bangla digits are read', () => {
         const { onApply } = open();
+        fireEvent.click(
+            screen.getByRole('tab', { name: t('pos.discount.tab_percent') }),
+        );
         const input = screen.getByLabelText(t('pos.discount.entry_percent'));
         fireEvent.change(input, { target: { value: '৫' } });
         expect(newTotal()).toContain('1,092.50');
