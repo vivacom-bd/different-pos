@@ -131,8 +131,14 @@ function PaymentBody({
     );
     const missingCourier =
         courierRequired && couriers.length > 0 && courier === "";
-    // Courier condition (cash on delivery), raw as typed; the effective value is clamped to the due.
-    const [conditionRaw, setCondition] = useState<Paisa>(0);
+    // Courier condition (cash on delivery). With a courier it follows the remaining due on its own, so the
+    // cashier only types what was paid now; typing a condition fixes it (clamped to the due), Alt+O re-links.
+    const [conditionRaw, setConditionRaw] = useState<Paisa>(0);
+    const [conditionAuto, setConditionAuto] = useState(true);
+    const setCondition = (v: Paisa) => {
+        setConditionAuto(false);
+        setConditionRaw(v);
+    };
     const formRef = useRef<HTMLFormElement>(null);
     const setBusy = (value: boolean) => {
         setBusyState(value);
@@ -140,7 +146,12 @@ function PaymentBody({
     };
 
     const dueNow = settle(total, rows, methods, customer).due;
-    const condition = courier === "" ? 0 : Math.min(conditionRaw, dueNow);
+    const condition =
+        courier === ""
+            ? 0
+            : conditionAuto
+              ? dueNow
+              : Math.min(conditionRaw, dueNow);
     const s = settle(total, rows, methods, customer, condition);
     const approved = approval !== null;
     const blocking = s.problems.filter(
@@ -221,7 +232,7 @@ function PaymentBody({
                     break;
                 case "condition":
                     if (courier !== "") {
-                        setCondition(s.due);
+                        setConditionAuto(true);
                     }
                     break;
                 case "exact":
@@ -408,7 +419,7 @@ function PaymentBody({
                             onChange={(e) => {
                                 setCourier(e.target.value);
                                 if (e.target.value === "") {
-                                    setCondition(0);
+                                    setConditionAuto(true);
                                 }
                             }}
                         >
@@ -431,6 +442,11 @@ function PaymentBody({
                                         className="flex items-center gap-1.5 text-[11px] font-medium text-foreground"
                                     >
                                         {t("pos.pay.condition")}
+                                        {conditionAuto && (
+                                            <span className="text-[10px] font-normal text-muted-foreground">
+                                                {t("pos.pay.condition_auto")}
+                                            </span>
+                                        )}
                                         <Kbd
                                             keys="alt+o"
                                             className="text-[9px]"
@@ -444,7 +460,7 @@ function PaymentBody({
                                                 setCondition(
                                                     Math.min(
                                                         Math.max(0, v ?? 0),
-                                                        s.due,
+                                                        dueNow,
                                                     ),
                                                 )
                                             }

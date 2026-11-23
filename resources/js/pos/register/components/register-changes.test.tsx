@@ -112,6 +112,36 @@ describe("courier on the sale", () => {
         expect(onSubmit).toHaveBeenCalledWith(expect.any(Array), "RedX", 0);
     });
 
+    it("fills the condition with the rest of the due on its own", () => {
+        render(
+            <PaymentDialog
+                open
+                total={10_000}
+                methods={[cash]}
+                customer={null}
+                approval={null}
+                couriers={["Pathao", "RedX"]}
+                onSubmit={vi.fn()}
+                onNeedApproval={vi.fn()}
+                onAttachCustomer={vi.fn()}
+                onClose={vi.fn()}
+            />,
+        );
+        fireEvent.change(screen.getByLabelText("Courier (optional)"), {
+            target: { value: "RedX" },
+        });
+        const cashInput = document.getElementById(
+            `pos-tender-${cash.id}`,
+        ) as HTMLInputElement;
+        fireEvent.change(cashInput, { target: { value: "30" } });
+        const condition = document.getElementById(
+            "pos-pay-condition",
+        ) as HTMLInputElement;
+        expect(condition.value).toMatch(/70/);
+        fireEvent.change(cashInput, { target: { value: "40" } });
+        expect(condition.value).toMatch(/60/);
+    });
+
     it("hides the picker without couriers", () => {
         render(
             <PaymentDialog

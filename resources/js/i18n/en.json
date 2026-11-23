@@ -2862,6 +2862,7 @@
             "courier_required": "Courier (required)",
             "courier_choose": "Choose a courier",
             "condition": "Condition (collect at courier)",
+            "condition_auto": "(auto = rest of due)",
             "courier_required_error": "Choose a courier to complete this sale.",
             "courier_none": "No courier",
             "complete_due": "Confirm Partial / Due Sale",
