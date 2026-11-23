@@ -58,6 +58,7 @@ const detail = (overrides: Partial<SaleDetail> = {}): SaleDetail => ({
         paid: 400_000,
         change_given: 0,
         due: 51_500,
+        condition: 0,
         returned_total: 0,
         cogs_total: null,
         voided_at: null,
@@ -147,6 +148,23 @@ describe('SaleInvoiceDialog', () => {
         expect(buttons.join('|')).not.toContain(t('sales.resend_sms'));
         // Cost & batches are not sent without products.view_cost.
         expect(dialog.textContent).not.toContain(t('sales.cost_batches'));
+    });
+
+    it('splits the due into the courier condition and what the shop is still owed', () => {
+        const base = detail();
+        render(
+            <SaleInvoiceDialog
+                detail={{
+                    ...base,
+                    sale: { ...base.sale, due: 51_500, condition: 40_000 },
+                }}
+                methods={[]}
+                onClose={vi.fn()}
+            />,
+        );
+        const text = screen.getByRole('dialog').textContent ?? '';
+        expect(text).toContain(t('sales.condition'));
+        expect(text).toContain(t('sales.outstanding_due'));
     });
 
     it('keeps cost and batches in a collapsed section', () => {

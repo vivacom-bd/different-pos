@@ -51,6 +51,7 @@ final class StoreSaleRequest extends FormRequest
             'member_token' => ['nullable', 'string', 'max:2000'],
             'note' => ['nullable', 'string', 'max:500'],
             'courier_name' => ['nullable', 'string', 'max:100'],
+            'cod_amount' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
@@ -82,6 +83,7 @@ final class StoreSaleRequest extends FormRequest
             approver: $approver,
             courierName: $this->filled('courier_name') ? trim((string) $this->validated('courier_name')) : null,
             memberVerified: $memberVerified,
+            codAmount: max(0, $this->integer('cod_amount')),
         );
     }
 

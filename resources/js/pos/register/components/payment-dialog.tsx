@@ -57,7 +57,7 @@ const CASH_STEPS: readonly Paisa[] = [10_000, 50_000, 100_000];
 /**
  * F9, the mockup's "Payment & Due Settlement" panel: one row per payment method (cash prefilled
  * with the exact amount), quick cash, and the settlement on the right (tendered, change or due with
- * the credit-limit meter). Alt+C/K/B/N/R/A pick a method, Alt+E exact cash, Alt+D rest as due,
+ * the credit-limit meter). Alt+C/K/B/N/R/A pick a method, Alt+E exact cash, Alt+D rest as due, Alt+O rest as courier condition,
  * 1–3 add cash, Enter or F10 completes.
  */
 type Props = {
@@ -75,6 +75,7 @@ type Props = {
     onSubmit: (
         tenders: TenderRow[],
         courier: string | null,
+        condition: number,
     ) => Promise<PosError | null>;
     onNeedApproval: (permission: string) => void;
     onAttachCustomer: () => void;
@@ -130,13 +131,17 @@ function PaymentBody({
     );
     const missingCourier =
         courierRequired && couriers.length > 0 && courier === "";
+    // Courier condition (cash on delivery), raw as typed; the effective value is clamped to the due.
+    const [conditionRaw, setCondition] = useState<Paisa>(0);
     const formRef = useRef<HTMLFormElement>(null);
     const setBusy = (value: boolean) => {
         setBusyState(value);
         onBusy(value);
     };
 
-    const s = settle(total, rows, methods, customer);
+    const dueNow = settle(total, rows, methods, customer).due;
+    const condition = courier === "" ? 0 : Math.min(conditionRaw, dueNow);
+    const s = settle(total, rows, methods, customer, condition);
     const approved = approval !== null;
     const blocking = s.problems.filter(
         (p) => !(OVERRIDABLE.includes(p) && approved),
@@ -180,6 +185,7 @@ function PaymentBody({
         const result = await onSubmit(
             rows.filter((r) => r.amount > 0),
             courier === "" ? null : courier,
+            condition,
         );
         setBusy(false);
         setError(result);
@@ -212,6 +218,11 @@ function PaymentBody({
                 case "due":
                     setRows((prev) => leaveDue(prev, cashId));
                     refocus();
+                    break;
+                case "condition":
+                    if (courier !== "") {
+                        setCondition(s.due);
+                    }
                     break;
                 case "exact":
                     setRows((prev) => exactCash(prev, total, cashId));
@@ -394,7 +405,12 @@ function PaymentBody({
                                     ? "pos-pay-courier-error"
                                     : undefined
                             }
-                            onChange={(e) => setCourier(e.target.value)}
+                            onChange={(e) => {
+                                setCourier(e.target.value);
+                                if (e.target.value === "") {
+                                    setCondition(0);
+                                }
+                            }}
                         >
                             <option value="">
                                 {courierRequired
@@ -407,6 +423,42 @@ function PaymentBody({
                                 </option>
                             ))}
                         </select>
+                        {courier !== "" && (
+                            <div className="space-y-1 pt-1">
+                                <div className="flex items-center justify-between gap-2">
+                                    <label
+                                        htmlFor="pos-pay-condition"
+                                        className="flex items-center gap-1.5 text-[11px] font-medium text-foreground"
+                                    >
+                                        {t("pos.pay.condition")}
+                                        <Kbd
+                                            keys="alt+o"
+                                            className="text-[9px]"
+                                        />
+                                    </label>
+                                    <div className="w-40">
+                                        <MoneyInput
+                                            id="pos-pay-condition"
+                                            value={condition}
+                                            onChange={(v) =>
+                                                setCondition(
+                                                    Math.min(
+                                                        Math.max(0, v ?? 0),
+                                                        s.due,
+                                                    ),
+                                                )
+                                            }
+                                            aria-describedby="pos-pay-summary"
+                                            className={cn(
+                                                "h-9 bg-surface-sunken font-mono font-bold",
+                                                condition === 0 &&
+                                                    "text-muted-foreground",
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         {missingCourier && (
                             <p
                                 id="pos-pay-courier-error"
@@ -468,6 +520,14 @@ function PaymentBody({
                                     {t("pos.pay.due")}: {d.money(s.due)}
                                 </span>
                             </div>
+                            {condition > 0 && (
+                                <div className="flex justify-between text-[10px] font-bold">
+                                    <span>{t("pos.pay.condition")}</span>
+                                    <span className="num">
+                                        {d.money(condition)}
+                                    </span>
+                                </div>
+                            )}
                             {s.tendered === 0 && (
                                 <p className="text-[10px] font-bold">
                                     {t("pos.pay.full_credit")}

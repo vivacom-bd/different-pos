@@ -71,6 +71,7 @@ export type SaleDetail = {
         paid: number;
         change_given: number;
         due: number;
+        condition: number;
         returned_total: number;
         cogs_total: number | null;
         voided_at: string | null;
@@ -637,13 +638,22 @@ export function SaleInvoiceDialog({
                                             tone="muted"
                                         />
                                     ) : null}
-                                    {sale.due > 0 ? (
+                                    {sale.condition > 0 ? (
+                                        <Line
+                                            label={t('sales.condition')}
+                                            value={digits.money(sale.condition)}
+                                            tone="muted"
+                                        />
+                                    ) : null}
+                                    {sale.due - sale.condition > 0 ? (
                                         <div className="flex justify-between border-t pt-1 font-bold text-destructive">
                                             <span>
                                                 {t('sales.outstanding_due')}
                                             </span>
                                             <span className="num">
-                                                {digits.money(sale.due)}
+                                                {digits.money(
+                                                    sale.due - sale.condition,
+                                                )}
                                             </span>
                                         </div>
                                     ) : null}

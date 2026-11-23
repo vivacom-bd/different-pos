@@ -461,9 +461,10 @@ export default function Register(props: Props) {
     const pay = async (
         tenders: TenderRow[],
         courier: string | null = null,
+        condition = 0,
     ): Promise<PosError | null> => {
         const result = await submitSale(
-            saleBody(cart, tenders, total, registerId, courier),
+            saleBody(cart, tenders, total, registerId, courier, condition),
         );
         if (!result.ok) {
             if (result.error.code === "approval_expired") {

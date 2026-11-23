@@ -95,8 +95,13 @@ final readonly class ReceiptBuilder
         if (! $sale->returned_total->isZero()) {
             $totals[] = ['label' => __('receipts.returned'), 'value' => $this->money($sale->returned_total, $locale)];
         }
-        if (! $sale->due->isZero()) {
-            $totals[] = ['label' => __('receipts.due'), 'value' => $this->money($sale->due, $locale), 'strong' => true];
+        $condition = $sale->openCondition();
+        if (! $condition->isZero()) {
+            $totals[] = ['label' => __('receipts.condition'), 'value' => $this->money($condition, $locale)];
+        }
+        $due = $sale->dueAfterCondition();
+        if (! $due->isZero()) {
+            $totals[] = ['label' => __('receipts.due'), 'value' => $this->money($due, $locale), 'strong' => true];
         }
 
         $exchange = null;
@@ -175,6 +180,9 @@ final readonly class ReceiptBuilder
             ];
         }
 
+        // A sale with a courier condition collects only what is still open of it; otherwise the full due.
+        $collect = $sale->cod_amount->isZero() ? $sale->due : $sale->openCondition();
+
         return [
             'kind' => 'chalan',
             'locale' => $locale,
@@ -191,7 +199,7 @@ final readonly class ReceiptBuilder
             'total_qty' => $this->qty($total, $locale),
             'has_returns' => $returns,
             'courier' => $courier,
-            'cod' => $cod && $sale->status !== SaleStatus::Voided && $sale->due->paisa > 0 ? $this->money($sale->due, $locale) : null,
+            'cod' => $cod && $sale->status !== SaleStatus::Voided && $collect->paisa > 0 ? $this->money($collect, $locale) : null,
         ];
     }
 

@@ -37,6 +37,7 @@ final readonly class SaleDraft
         public ?string $courierName = null,
         public ?string $courierTracking = null,
         public bool $memberVerified = false,
+        public int $codAmount = 0,
     ) {
         $this->orderDiscount = $orderDiscount ?? Discount::none();
     }

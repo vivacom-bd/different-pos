@@ -440,7 +440,7 @@ sales [tenant][B]
   returned_total BIGINT DEFAULT 0
   cogs_total BIGINT DEFAULT 0
   payment_status VARCHAR(16)               -- unpaid|partial|paid
-  courier_name VARCHAR(100) NULL, courier_tracking VARCHAR(100) NULL  -- courier picked per sale in the register pay dialog from the active `couriers` (free text, trimmed, cut to 100 for a synced sale, never a rejection); printed as "Courier: X" on A4 + thermal
+  courier_name VARCHAR(100) NULL, courier_tracking VARCHAR(100) NULL, cod_amount BIGINT UNSIGNED NOT NULL DEFAULT 0  -- `cod_amount` = courier "condition" (cash on delivery, paisa; migration `2026_11_24_000100`): the part of the due the courier collects; <= due and needs a courier (online 422 `condition_invalid`; a device sale is clamped and flagged `condition_adjusted`); displayed condition = min(cod_amount, due) so a later due collection shrinks it; it does not count toward the credit limit; the receipt shows Condition and Due = due - condition, the chalan COD box prints it. Courier: courier picked per sale in the register pay dialog from the active `couriers` (free text, trimmed, cut to 100 for a synced sale, never a rejection); printed as "Courier: X" on A4 + thermal
   public_token CHAR(32) UNIQUE NULL        -- /r/{token}
   buyer_vat_bin VARCHAR(20) NULL           -- snapshot of customer BIN at sale time
   -- offline / device provenance

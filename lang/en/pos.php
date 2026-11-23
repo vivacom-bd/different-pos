@@ -18,6 +18,7 @@ return [
         'invalid_money' => 'An amount is not valid.',
         'member_pin_required' => 'This customer must enter their PIN (or a manager must override) before the sale completes.',
         'courier_required' => 'Choose a courier for this sale before completing it.',
+        'condition_invalid' => 'The condition must be a courier sale and not more than the due.',
         'customer_required' => 'Attach a customer to this sale before completing it.',
     ],
     'approval' => [

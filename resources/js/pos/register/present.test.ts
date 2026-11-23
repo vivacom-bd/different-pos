@@ -261,6 +261,7 @@ describe('payKey', () => {
         expect(key('F10', { shiftKey: true })).toBeNull();
         expect(key('d', { altKey: true })).toEqual({ type: 'due' });
         expect(key('E', { altKey: true })).toEqual({ type: 'exact' });
+        expect(key('o', { altKey: true })).toEqual({ type: 'condition' });
         expect(key('b', { altKey: true, typing: true })).toEqual({
             type: 'pick',
             methodId: 3,

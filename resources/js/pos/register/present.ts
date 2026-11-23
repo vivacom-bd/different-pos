@@ -228,12 +228,13 @@ export function leaveDue(
 export type PayKey =
     | { type: 'submit' }
     | { type: 'due' }
+    | { type: 'condition' }
     | { type: 'exact' }
     | { type: 'pick'; methodId: number }
     | { type: 'quick'; index: number };
 
 /**
- * The payment panel's keys: F10 completes; Alt+E exact cash, Alt+D rest as due, Alt+<method key>
+ * The payment panel's keys: F10 completes; Alt+E exact cash, Alt+D rest as due, Alt+O rest as courier condition, Alt+<method key>
  * picks a method; 1–4 quick cash when no field has the focus.
  */
 export function payKey(
@@ -251,6 +252,9 @@ export function payKey(
         const key = e.key.toLowerCase();
         if (key === 'd') {
             return { type: 'due' };
+        }
+        if (key === 'o') {
+            return { type: 'condition' };
         }
         if (key === 'e') {
             return { type: 'exact' };

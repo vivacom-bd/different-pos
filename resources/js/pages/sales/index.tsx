@@ -73,6 +73,7 @@ type Row = {
     total: number;
     paid: number;
     due: number;
+    condition: number;
     returned: number;
     status: string;
     payment_status: string;
@@ -339,8 +340,18 @@ export default function SalesIndex({
                 sortKey: 'due',
                 numeric: true,
                 cell: (r) => (
-                    <span className="font-semibold text-destructive">
-                        {r.due > 0 ? digits.money(r.due) : '—'}
+                    <span className="flex flex-col items-end">
+                        <span className="font-semibold text-destructive">
+                            {r.due - r.condition > 0
+                                ? digits.money(r.due - r.condition)
+                                : '—'}
+                        </span>
+                        {r.condition > 0 ? (
+                            <span className="text-xs text-muted-foreground">
+                                {t('sales.condition')}:{' '}
+                                {digits.money(r.condition)}
+                            </span>
+                        ) : null}
                     </span>
                 ),
             },

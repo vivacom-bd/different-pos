@@ -56,6 +56,7 @@ final readonly class PreparedSale
         public string $clientUuid,
         public array $overrides,
         public MemberAuth $memberAuth = MemberAuth::None,
+        public ?Money $codAmount = null,
     ) {}
 
     public function total(): Money

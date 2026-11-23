@@ -52,6 +52,23 @@ describe('settle', () => {
         ).toContain('change_from_non_cash');
     });
 
+    it('does not count the courier condition toward the credit limit', () => {
+        const customer = named({ credit_limit: 10_000 });
+        expect(
+            settle(45_000, [row(1, 30_000)], methods, customer, 10_000)
+                .problems,
+        ).toEqual([]);
+        expect(
+            settle(45_000, [row(1, 30_000)], methods, customer, 4_000)
+                .problems,
+        ).toEqual(['over_limit']);
+        // A condition above the due is clamped to it.
+        expect(
+            settle(45_000, [row(1, 30_000)], methods, customer, 99_000)
+                .balanceAfter,
+        ).toBe(0);
+    });
+
     it('refuses a due for the walk-in, allows it for a named customer within the limit', () => {
         expect(
             settle(45_000, [row(1, 40_000)], methods, null).problems,

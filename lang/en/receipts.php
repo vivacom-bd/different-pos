@@ -38,6 +38,7 @@ return [
     'paid' => 'Paid',
     'change' => 'Change',
     'due' => 'Due',
+    'condition' => 'Condition (collect at courier)',
     'returned' => 'Returned',
     'payments' => 'Payments',
     'vat_summary' => 'VAT summary',

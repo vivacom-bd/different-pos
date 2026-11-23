@@ -28,13 +28,15 @@ export type Settlement = {
 /**
  * Mirrors the server's tender rules so the cashier sees them before Pay: change only from cash, due
  * only for a named customer within the credit limit (a manager may override the limit), customer
- * credit up to the spendable advance, references where the method needs one.
+ * credit up to the spendable advance, references where the method needs one. The courier
+ * `condition` (collected on delivery, clamped to the due) does not count toward the credit limit.
  */
 export function settle(
     total: Paisa,
     tenders: readonly TenderRow[],
     methods: readonly PaymentMethod[],
     customer: CustomerCard | null,
+    condition: Paisa = 0,
 ): Settlement {
     const byId = new Map(methods.map((m) => [m.id, m]));
     let tendered = 0;
@@ -76,7 +78,11 @@ export function settle(
 
     let balanceAfter: Paisa | null = null;
     if (customer !== null) {
-        balanceAfter = customer.balance + due + creditUsed;
+        balanceAfter =
+            customer.balance +
+            due +
+            creditUsed -
+            Math.min(Math.max(0, condition), due);
     }
     if (due > 0) {
         if (customer === null) {

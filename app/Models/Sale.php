@@ -45,6 +45,7 @@ use Illuminate\Support\Carbon;
  * @property Money $paid
  * @property Money $change_given
  * @property Money $due
+ * @property Money $cod_amount
  * @property Money $returned_total
  * @property Money $cogs_total
  * @property PaymentStatus $payment_status
@@ -83,7 +84,7 @@ final class Sale extends Model
     protected $fillable = [
         'client_uuid', 'number', 'register_id', 'exchange_return_id', 'customer_id', 'status', 'sold_at', 'subtotal',
         'item_discount_total', 'order_discount', 'tax_total', 'shipping', 'rounding', 'total', 'paid',
-        'change_given', 'due', 'returned_total', 'cogs_total', 'payment_status', 'courier_name', 'courier_tracking',
+        'change_given', 'due', 'cod_amount', 'returned_total', 'cogs_total', 'payment_status', 'courier_name', 'courier_tracking',
         'public_token', 'buyer_vat_bin', 'origin', 'device_id', 'device_created_at', 'synced_at', 'member_auth',
         'member_auth_by', 'member_pin_box', 'membership_card_id', 'sync_flags', 'sync_flags_ack_by',
         'sync_flags_ack_at', 'client_totals', 'note', 'sold_by', 'voided_by', 'voided_at', 'void_reason',
@@ -134,6 +135,18 @@ final class Sale extends Model
         return $this->belongsTo(User::class, 'voided_by');
     }
 
+    /** The condition the courier still has to collect: the stored condition, never more than the current due. */
+    public function openCondition(): Money
+    {
+        return $this->cod_amount->compareTo($this->due) < 0 ? $this->cod_amount : $this->due;
+    }
+
+    /** What the customer still owes the shop itself (due less the courier's condition). */
+    public function dueAfterCondition(): Money
+    {
+        return $this->due->minus($this->openCondition());
+    }
+
     /** @return HasMany<SaleItem, $this> */
     public function items(): HasMany
     {
@@ -161,6 +174,7 @@ final class Sale extends Model
             'paid' => MoneyCast::class,
             'change_given' => MoneyCast::class,
             'due' => MoneyCast::class,
+            'cod_amount' => MoneyCast::class,
             'returned_total' => MoneyCast::class,
             'cogs_total' => MoneyCast::class,
             'payment_status' => PaymentStatus::class,

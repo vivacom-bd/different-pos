@@ -75,6 +75,8 @@ describe("courier on the sale", () => {
         );
         expect(saleBody(state, [], 0, null).courier_name).toBeNull();
         expect(saleBody(state, [], 0, null, "  ").courier_name).toBeNull();
+        expect(saleBody(state, [], 0, null, "Pathao", 5_000).cod_amount).toBe(5_000);
+        expect(saleBody(state, [], 0, null, null, 5_000).cod_amount).toBe(0);
     });
 
     const cash: PaymentMethod = {
@@ -107,7 +109,7 @@ describe("courier on the sale", () => {
             screen.getByLabelText("Courier (optional)").closest("form")!,
         );
         await Promise.resolve();
-        expect(onSubmit).toHaveBeenCalledWith(expect.any(Array), "RedX");
+        expect(onSubmit).toHaveBeenCalledWith(expect.any(Array), "RedX", 0);
     });
 
     it("hides the picker without couriers", () => {
@@ -225,7 +227,7 @@ describe("courier required without a default", () => {
         expect(screen.queryByRole("alert")).toBeNull();
         fireEvent.submit(form);
         await Promise.resolve();
-        expect(onSubmit).toHaveBeenCalledWith(expect.any(Array), "RedX");
+        expect(onSubmit).toHaveBeenCalledWith(expect.any(Array), "RedX", 0);
     });
 
     it("preselects the default (first) courier and stays optional when one exists", () => {

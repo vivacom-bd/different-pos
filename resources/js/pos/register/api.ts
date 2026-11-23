@@ -178,6 +178,7 @@ export function saleBody(
     expectedTotal: number,
     registerId: number | null,
     courier: string | null = null,
+    condition: number = 0,
 ) {
     return {
         client_uuid: state.clientUuid,
@@ -204,6 +205,9 @@ export function saleBody(
                 : null,
         member_token: memberTokenFor(state.customer, state.member),
         courier_name: courier !== null && courier.trim() !== '' ? courier.trim() : null,
+        // Courier condition (paisa): what the courier collects on delivery; only with a courier.
+        cod_amount:
+            courier !== null && courier.trim() !== '' ? Math.max(0, condition) : 0,
     };
 }
 

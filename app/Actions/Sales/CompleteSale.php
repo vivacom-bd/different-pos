@@ -19,6 +19,7 @@ use App\Enums\StockMovementType;
 use App\Events\SaleCompleted;
 use App\Exceptions\Domain\BackdateNotAllowed;
 use App\Exceptions\Domain\BelowCostSale;
+use App\Exceptions\Domain\ConditionInvalid;
 use App\Exceptions\Domain\CourierRequired;
 use App\Exceptions\Domain\CreditLimitExceeded;
 use App\Exceptions\Domain\CustomerRequired;
@@ -174,6 +175,7 @@ final readonly class CompleteSale
             }
             $flags[] = 'courier_missing';
         }
+        $cod = $this->condition($draft, $total->minus($paid), $flags, $origin);
         $memberAuth = $this->memberAuth($actor, $draft, $customer, $origin, $flags);
         $clientTotals = null;
         if ($draft->expectedTotal instanceof Money && ! $draft->expectedTotal->equals($total)) {
@@ -200,6 +202,7 @@ final readonly class CompleteSale
             clientUuid: $draft->clientUuid ?? (string) Str::uuid7(),
             overrides: array_values(array_unique($overrides)),
             memberAuth: $memberAuth,
+            codAmount: $cod,
         );
     }
 
@@ -348,6 +351,7 @@ final readonly class CompleteSale
             'payment_status' => $total->isZero() ? PaymentStatus::Paid : PaymentStatus::Unpaid,
             'courier_name' => $this->courier($prepared->draft->courierName),
             'courier_tracking' => $prepared->draft->courierTracking,
+            'cod_amount' => $prepared->codAmount ?? Money::zero(),
             'public_token' => Str::random(32),
             'buyer_vat_bin' => $prepared->customer->is_walk_in ? null : $prepared->customer->vat_bin,
             'origin' => $prepared->origin,
@@ -495,17 +499,43 @@ final readonly class CompleteSale
 
         if ($due->paisa > 0) {
             $limit = $this->accounts->creditLimit($customer);
-            if ($limit instanceof Money && $customer->balance->compareTo($limit) > 0) {
+            // The courier collects the condition, so only the rest of the due counts against the limit.
+            $counted = $customer->balance->minus($prepared->codAmount ?? Money::zero());
+            if ($limit instanceof Money && $counted->compareTo($limit) > 0) {
                 if (! $this->gate->allows($actor, $prepared->draft->approver, 'pos.customer_pin_override')) {
-                    throw CreditLimitExceeded::over($limit, $customer->balance);
+                    throw CreditLimitExceeded::over($limit, $counted);
                 }
                 Audit::log('sale.credit_limit_override', $sale, [
                     'limit' => $limit->paisa,
-                    'balance' => $customer->balance->paisa,
+                    'balance' => $counted->paisa,
                     'approved_by' => $prepared->draft->approver?->id,
                 ], $actor);
             }
         }
+    }
+
+    /**
+     * The courier condition (cash on delivery) of this sale: at most the due, and only with a courier.
+     * The register refuses a bad one; a synced device sale already happened, so it is clamped and flagged.
+     *
+     * @param  list<string>  $flags
+     */
+    private function condition(SaleDraft $draft, Money $due, array &$flags, SaleOrigin $origin): Money
+    {
+        $asked = max(0, $draft->codAmount);
+        if ($asked === 0) {
+            return Money::zero();
+        }
+        $allowed = $this->courier($draft->courierName) === null ? 0 : max(0, $due->paisa);
+        if ($asked <= $allowed) {
+            return Money::ofPaisa($asked);
+        }
+        if ($origin === SaleOrigin::Web) {
+            throw ConditionInvalid::forSale();
+        }
+        $flags[] = 'condition_adjusted';
+
+        return Money::ofPaisa($allowed);
     }
 
     /** Courier text as typed: trimmed, blank = none, cut to the column so a synced sale is never rejected for it. */
