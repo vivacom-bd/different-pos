@@ -188,7 +188,7 @@ Single DB, shared schema.
 ### 3.8 Permissions (seeded; names are a contract with 02_AppFlow)
 ```
 dashboard.view
-pos.sell · pos.discount_override · pos.price_override · pos.backdate · pos.sell_below_cost · pos.customer_pin_override
+pos.sell · pos.discount_override · pos.price_override · pos.backdate (kept for roles, no longer checked: any seller may back-date within `backdate_days`, owner decision 2026-11-26) · pos.sell_below_cost · pos.customer_pin_override
 devices.manage
 sales.view · sales.void · returns.view · returns.create
 payments.collect · payments.pay

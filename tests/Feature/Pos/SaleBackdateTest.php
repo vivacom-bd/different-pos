@@ -46,16 +46,18 @@ it('sells today when no sold_on is sent or it is today', function (?string $valu
     expect(Sale::query()->find($res->json('sale.id'))->sold_at->toDateString())->toBe(now()->toDateString());
 })->with(['none', null]);
 
-it('back-dates a sale to the chosen day for a user with pos.backdate', function (): void {
+it('back-dates a sale to the chosen day', function (): void {
     $day = now()->subDay()->toDateString();
     $res = $this->actingAs($this->owner)->postJson('/app/pos/sales', backdateSale($this->world, $this->shirt, ['sold_on' => $day]))->assertCreated();
 
     expect(Sale::query()->find($res->json('sale.id'))->sold_at->toDateString())->toBe($day);
 });
 
-it('refuses a back-dated sale without pos.backdate with the approval code', function (): void {
-    $this->actingAs($this->cashier)->postJson('/app/pos/sales', backdateSale($this->world, $this->shirt, ['sold_on' => now()->subDay()->toDateString()]))
-        ->assertStatus(422)->assertJsonPath('code', 'backdate_not_allowed');
+it('lets a cashier back-date without manager approval', function (): void {
+    $day = now()->subDay()->toDateString();
+    $res = $this->actingAs($this->cashier)->postJson('/app/pos/sales', backdateSale($this->world, $this->shirt, ['sold_on' => $day]))->assertCreated();
+
+    expect(Sale::query()->find($res->json('sale.id'))->sold_at->toDateString())->toBe($day);
 });
 
 it('refuses a sale older than backdate_days and a future date', function (): void {

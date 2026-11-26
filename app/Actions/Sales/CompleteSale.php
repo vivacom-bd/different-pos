@@ -595,15 +595,10 @@ final readonly class CompleteSale
         }
 
         $days = BusinessDay::daysBetween($soldAt, $now, BusinessDay::timezone($this->context->tenant()));
-        if ($days > 0) {
-            if (! $this->gate->allows($actor, $draft->approver, 'pos.backdate')) {
-                throw BackdateNotAllowed::noPermission();
-            }
-            $limit = (int) $this->context->tenant()->setting('backdate_days');
-            if ($days > $limit) {
-                throw BackdateNotAllowed::tooOld($limit);
-            }
-            $overrides[] = 'pos.backdate';
+        // Any seller may back-date (owner decision 2026-11-26): only the tenant's backdate_days window applies.
+        $limit = (int) $this->context->tenant()->setting('backdate_days');
+        if ($days > $limit) {
+            throw BackdateNotAllowed::tooOld($limit);
         }
 
         return $soldAt;

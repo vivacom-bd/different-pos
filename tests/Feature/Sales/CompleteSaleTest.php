@@ -242,7 +242,7 @@ it('needs pos.price_override for another unit price', function (): void {
     expect($this->world->sell([$this->world->line($this->shirt, 1, 160_000)], [$this->world->tender('cash', 160_000)], role: 'Manager')->total->paisa)->toBe(160_000);
 });
 
-it('back-dates only with pos.backdate and within backdate_days', function (): void {
+it('back-dates for any seller within backdate_days', function (): void {
     $line = [$this->world->line($this->shirt)];
     $cash = [$this->world->tender('cash', 150_000)];
 
@@ -250,10 +250,10 @@ it('back-dates only with pos.backdate and within backdate_days', function (): vo
     expect($sale->sold_at->toDateString())->toBe(now()->subDays(3)->toDateString());
 
     expect(fn () => $this->world->sell($line, $cash, soldAt: now()->subDays(4)))->toThrow(BackdateNotAllowed::class, 'at most 3 days')
-        ->and(fn () => $this->world->sell($line, $cash, role: 'Cashier', soldAt: now()->subDay()))->toThrow(BackdateNotAllowed::class, 'permission')
         ->and(fn () => $this->world->sell($line, $cash, soldAt: now()->addHour()))->toThrow(BackdateNotAllowed::class, 'future');
 
-    // Earlier the same business day needs no permission.
+    // A cashier back-dates without approval.
+    expect($this->world->sell($line, $cash, role: 'Cashier', soldAt: now()->subDay())->sold_at->toDateString())->toBe(now()->subDay()->toDateString());
     expect($this->world->sell($line, $cash, role: 'Cashier', soldAt: now()->subHours(2))->status)->toBe(SaleStatus::Completed);
 });
 
