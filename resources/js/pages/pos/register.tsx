@@ -462,9 +462,18 @@ export default function Register(props: Props) {
         tenders: TenderRow[],
         courier: string | null = null,
         condition = 0,
+        soldOn: string | null = null,
     ): Promise<PosError | null> => {
         const result = await submitSale(
-            saleBody(cart, tenders, total, registerId, courier, condition),
+            saleBody(
+                cart,
+                tenders,
+                total,
+                registerId,
+                courier,
+                condition,
+                soldOn,
+            ),
         );
         if (!result.ok) {
             if (result.error.code === "approval_expired") {
@@ -1555,6 +1564,7 @@ export default function Register(props: Props) {
                 autoPrint={settings.auto_print}
                 couriers={props.couriers}
                 courierRequired={props.courier_required}
+                backdateDays={settings.backdate_days}
                 onSubmit={pay}
                 onNeedApproval={setApprovalFor}
                 onAttachCustomer={() => setDialog("customer")}

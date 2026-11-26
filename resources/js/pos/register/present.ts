@@ -230,11 +230,12 @@ export type PayKey =
     | { type: 'due' }
     | { type: 'condition' }
     | { type: 'exact' }
+    | { type: 'date' }
     | { type: 'pick'; methodId: number }
     | { type: 'quick'; index: number };
 
 /**
- * The payment panel's keys: F10 completes; Alt+E exact cash, Alt+D rest as due, Alt+O rest as courier condition, Alt+<method key>
+ * The payment panel's keys: F10 completes; Alt+E exact cash, Alt+D rest as due, Alt+O rest as courier condition, Alt+T sale date, Alt+<method key>
  * picks a method; 1–4 quick cash when no field has the focus.
  */
 export function payKey(
@@ -258,6 +259,9 @@ export function payKey(
         }
         if (key === 'e') {
             return { type: 'exact' };
+        }
+        if (key === 't') {
+            return { type: 'date' };
         }
         const option = options.find((o) => o.key === key);
 
@@ -301,4 +305,24 @@ export function payBlockedByNoCustomer(
 /** After a sale: the done panel (with Print / Chalan) shows only when "print after sale" is on; off goes straight to the next sale. */
 export function showDonePanel(autoPrint: boolean): boolean {
     return autoPrint;
+}
+
+/** A local calendar day as YYYY-MM-DD (the register's own clock, not UTC). */
+export function localDay(date: Date): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** The earliest sale date the register offers: `days` before `today` (0 = today only). */
+export function earliestSaleDay(today: Date, days: number): string {
+    const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    d.setDate(d.getDate() - Math.max(0, days));
+
+    return localDay(d);
+}
+
+/** What goes on the wire: null for today (the server stamps "now"), else the chosen day. */
+export function soldOnFor(chosen: string, today: Date): string | null {
+    return chosen === '' || chosen === localDay(today) ? null : chosen;
 }

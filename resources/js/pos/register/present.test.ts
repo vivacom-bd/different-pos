@@ -6,8 +6,11 @@ import {
     creditMeter,
     exactCash,
     initialTenders,
+    earliestSaleDay,
     leaveDue,
+    localDay,
     payKey,
+    soldOnFor,
     pickTender,
     stockTone,
     tenderOptions,
@@ -303,5 +306,39 @@ describe('creditMeter', () => {
         expect(creditMeter(50_000, null)).toBeNull();
         expect(creditMeter(null, 200_000)).toBeNull();
         expect(creditMeter(50_000, 0)).toBeNull();
+    });
+});
+
+describe('sale date', () => {
+    const today = new Date(2026, 10, 26, 15, 30);
+
+    it('formats the local day and the earliest allowed day', () => {
+        expect(localDay(today)).toBe('2026-11-26');
+        expect(earliestSaleDay(today, 3)).toBe('2026-11-23');
+        expect(earliestSaleDay(today, 0)).toBe('2026-11-26');
+        expect(earliestSaleDay(new Date(2026, 2, 2), 3)).toBe('2026-02-27');
+    });
+
+    it('sends null for today and the date string for a past day', () => {
+        expect(soldOnFor('2026-11-26', today)).toBeNull();
+        expect(soldOnFor('', today)).toBeNull();
+        expect(soldOnFor('2026-11-25', today)).toBe('2026-11-25');
+    });
+
+    it('Alt+T focuses the date field', () => {
+        expect(
+            payKey(
+                {
+                    key: 't',
+                    altKey: true,
+                    ctrlKey: false,
+                    metaKey: false,
+                    shiftKey: false,
+                    typing: true,
+                },
+                [],
+                0,
+            ),
+        ).toEqual({ type: 'date' });
     });
 });

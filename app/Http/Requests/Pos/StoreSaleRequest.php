@@ -13,7 +13,9 @@ use App\Pos\Pricing\PriceCalculator;
 use App\Support\Http\ScopedExists;
 use App\Support\Money\Money;
 use App\Support\Quantity\Quantity;
+use App\Support\Sales\BusinessDay;
 use App\Support\Tenancy\TenantContext;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -52,6 +54,8 @@ final class StoreSaleRequest extends FormRequest
             'note' => ['nullable', 'string', 'max:500'],
             'courier_name' => ['nullable', 'string', 'max:100'],
             'cod_amount' => ['nullable', 'integer', 'min:0'],
+            // Back-dated sale: the business day only; CompleteSale enforces permission, window and future.
+            'sold_on' => ['nullable', 'date_format:Y-m-d'],
         ];
     }
 
@@ -84,7 +88,25 @@ final class StoreSaleRequest extends FormRequest
             courierName: $this->filled('courier_name') ? trim((string) $this->validated('courier_name')) : null,
             memberVerified: $memberVerified,
             codAmount: max(0, $this->integer('cod_amount')),
+            soldAt: $this->soldAt(),
         );
+    }
+
+    /** The chosen business day at the current time of day (tenant timezone); null = now (today or no date). */
+    private function soldAt(): ?CarbonImmutable
+    {
+        if (! $this->filled('sold_on')) {
+            return null;
+        }
+
+        $timezone = BusinessDay::timezone(app(TenantContext::class)->tenant());
+        $now = CarbonImmutable::now($timezone);
+        $day = CarbonImmutable::createFromFormat('Y-m-d', (string) $this->validated('sold_on'), $timezone);
+        if (! $day instanceof CarbonImmutable || $day->toDateString() === $now->toDateString()) {
+            return null;
+        }
+
+        return $day->setTimeFrom($now);
     }
 
     /** @param  array<string, mixed>|null  $input */

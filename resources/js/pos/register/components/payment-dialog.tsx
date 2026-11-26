@@ -22,11 +22,14 @@ import type { PosError } from "../api";
 import {
     addCash,
     creditMeter,
+    earliestSaleDay,
     exactCash,
     initialTenders,
     leaveDue,
+    localDay,
     payKey,
     pickTender,
+    soldOnFor,
     tenderOptions,
     type TenderIcon,
 } from "../present";
@@ -57,7 +60,7 @@ const CASH_STEPS: readonly Paisa[] = [10_000, 50_000, 100_000];
 /**
  * F9, the mockup's "Payment & Due Settlement" panel: one row per payment method (cash prefilled
  * with the exact amount), quick cash, and the settlement on the right (tendered, change or due with
- * the credit-limit meter). Alt+C/K/B/N/R/A pick a method, Alt+E exact cash, Alt+D rest as due, Alt+O rest as courier condition,
+ * the credit-limit meter). Alt+C/K/B/N/R/A pick a method, Alt+E exact cash, Alt+D rest as due, Alt+O rest as courier condition, Alt+T sale date,
  * 1–3 add cash, Enter or F10 completes.
  */
 type Props = {
@@ -72,10 +75,13 @@ type Props = {
     couriers?: readonly string[];
     /** Couriers exist but none is the default: a courier must be chosen to complete the sale. */
     courierRequired?: boolean;
+    /** Tenant setting backdate_days: how far back a sale may be dated (0 = today only). */
+    backdateDays?: number;
     onSubmit: (
         tenders: TenderRow[],
         courier: string | null,
         condition: number,
+        soldOn: string | null,
     ) => Promise<PosError | null>;
     onNeedApproval: (permission: string) => void;
     onAttachCustomer: () => void;
@@ -108,6 +114,7 @@ function PaymentBody({
     autoPrint = false,
     couriers = [],
     courierRequired = false,
+    backdateDays = 0,
     onSubmit,
     onNeedApproval,
     onAttachCustomer,
@@ -139,6 +146,11 @@ function PaymentBody({
         setConditionAuto(false);
         setConditionRaw(v);
     };
+    // Sale date: today unless a back-dated sale is recorded (the dialog remounts per open, so it resets).
+    const [today] = useState(() => new Date());
+    const todayDay = localDay(today);
+    const [saleDay, setSaleDay] = useState(todayDay);
+    const backdated = saleDay !== "" && saleDay < todayDay;
     const formRef = useRef<HTMLFormElement>(null);
     const setBusy = (value: boolean) => {
         setBusyState(value);
@@ -197,6 +209,7 @@ function PaymentBody({
             rows.filter((r) => r.amount > 0),
             courier === "" ? null : courier,
             condition,
+            soldOnFor(saleDay, today),
         );
         setBusy(false);
         setError(result);
@@ -234,6 +247,9 @@ function PaymentBody({
                     if (courier !== "") {
                         setConditionAuto(true);
                     }
+                    break;
+                case "date":
+                    document.getElementById("pos-pay-date")?.focus();
                     break;
                 case "exact":
                     setRows((prev) => exactCash(prev, total, cashId));
@@ -486,6 +502,30 @@ function PaymentBody({
                         )}
                     </div>
                 )}
+                <div className="space-y-1 pt-2">
+                    <label
+                        htmlFor="pos-pay-date"
+                        className="flex items-center justify-between text-[11px] font-medium text-foreground"
+                    >
+                        {t("pos.pay.sale_date")}
+                        <Kbd keys="alt+t" className="text-[9px]" />
+                    </label>
+                    <Input
+                        id="pos-pay-date"
+                        type="date"
+                        value={saleDay}
+                        max={todayDay}
+                        min={earliestSaleDay(today, backdateDays)}
+                        readOnly={backdateDays <= 0}
+                        onChange={(e) => setSaleDay(e.target.value)}
+                        className="h-9 bg-surface-sunken font-mono"
+                    />
+                    {backdated && (
+                        <output className="block text-[11px] font-medium text-warning">
+                            {t("pos.pay.backdated_warning")}
+                        </output>
+                    )}
+                </div>
                 {customer && (
                     <button
                         type="button"
@@ -507,6 +547,12 @@ function PaymentBody({
                     className="space-y-2 text-xs"
                     aria-live="polite"
                 >
+                    {backdated && (
+                        <div className="flex justify-between font-semibold text-warning">
+                            <span>{t("pos.pay.sale_date")}</span>
+                            <span className="num">{d.n(saleDay)}</span>
+                        </div>
+                    )}
                     <div className="flex justify-between text-muted-foreground">
                         <span>{t("pos.pay.payable")}</span>
                         <span className="num text-sm font-bold text-foreground">

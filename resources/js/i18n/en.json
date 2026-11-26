@@ -2864,6 +2864,8 @@
             "condition": "Condition (collect at courier)",
             "condition_auto": "(auto = rest of due)",
             "courier_required_error": "Choose a courier to complete this sale.",
+            "sale_date": "Sale date",
+            "backdated_warning": "Back-dated sale — needs permission or manager approval",
             "courier_none": "No courier",
             "complete_due": "Confirm Partial / Due Sale",
             "complete_print": "Complete Sale & Print Receipt"

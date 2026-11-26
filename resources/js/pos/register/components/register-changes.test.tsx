@@ -109,7 +109,7 @@ describe("courier on the sale", () => {
             screen.getByLabelText("Courier (optional)").closest("form")!,
         );
         await Promise.resolve();
-        expect(onSubmit).toHaveBeenCalledWith(expect.any(Array), "RedX", 0);
+        expect(onSubmit).toHaveBeenCalledWith(expect.any(Array), "RedX", 0, null);
     });
 
     it("fills the condition with the rest of the due on its own", () => {
@@ -257,7 +257,7 @@ describe("courier required without a default", () => {
         expect(screen.queryByRole("alert")).toBeNull();
         fireEvent.submit(form);
         await Promise.resolve();
-        expect(onSubmit).toHaveBeenCalledWith(expect.any(Array), "RedX", 0);
+        expect(onSubmit).toHaveBeenCalledWith(expect.any(Array), "RedX", 0, null);
     });
 
     it("preselects the default (first) courier and stays optional when one exists", () => {

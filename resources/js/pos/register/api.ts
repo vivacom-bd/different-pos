@@ -179,6 +179,7 @@ export function saleBody(
     registerId: number | null,
     courier: string | null = null,
     condition: number = 0,
+    soldOn: string | null = null,
 ) {
     return {
         client_uuid: state.clientUuid,
@@ -208,6 +209,8 @@ export function saleBody(
         // Courier condition (paisa): what the courier collects on delivery; only with a courier.
         cod_amount:
             courier !== null && courier.trim() !== '' ? Math.max(0, condition) : 0,
+        // Back-dated sale (YYYY-MM-DD); null = today.
+        sold_on: soldOn,
     };
 }
 
