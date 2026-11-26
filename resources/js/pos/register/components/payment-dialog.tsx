@@ -502,30 +502,6 @@ function PaymentBody({
                         )}
                     </div>
                 )}
-                <div className="space-y-1 pt-2">
-                    <label
-                        htmlFor="pos-pay-date"
-                        className="flex items-center justify-between text-[11px] font-medium text-foreground"
-                    >
-                        {t("pos.pay.sale_date")}
-                        <Kbd keys="alt+t" className="text-[9px]" />
-                    </label>
-                    <Input
-                        id="pos-pay-date"
-                        type="date"
-                        value={saleDay}
-                        max={todayDay}
-                        min={earliestSaleDay(today, backdateDays)}
-                        readOnly={backdateDays <= 0}
-                        onChange={(e) => setSaleDay(e.target.value)}
-                        className="h-9 bg-surface-sunken font-mono"
-                    />
-                    {backdated && (
-                        <output className="block text-[11px] font-medium text-warning">
-                            {t("pos.pay.backdated_warning")}
-                        </output>
-                    )}
-                </div>
                 {customer && (
                     <button
                         type="button"
@@ -541,18 +517,46 @@ function PaymentBody({
             </fieldset>
 
             {/* Right: settlement */}
-            <div className="flex flex-col justify-between gap-3 rounded-xl bg-surface-sunken p-4">
+            <div className="flex flex-col gap-3 rounded-xl bg-surface-sunken p-4">
+                <div className="space-y-1 border-b border-border pb-2">
+                    <div className="flex items-center justify-between gap-2">
+                        <label
+                            htmlFor="pos-pay-date"
+                            className={cn(
+                                "flex items-center gap-1.5 text-[11px] font-medium",
+                                backdated
+                                    ? "text-warning"
+                                    : "text-muted-foreground",
+                            )}
+                        >
+                            {t("pos.pay.sale_date")}
+                            <Kbd keys="alt+t" className="text-[9px]" />
+                        </label>
+                        <Input
+                            id="pos-pay-date"
+                            type="date"
+                            value={saleDay}
+                            max={todayDay}
+                            min={earliestSaleDay(today, backdateDays)}
+                            readOnly={backdateDays <= 0}
+                            onChange={(e) => setSaleDay(e.target.value)}
+                            className={cn(
+                                "h-9 w-40 bg-surface font-mono",
+                                backdated && "border-warning text-warning",
+                            )}
+                        />
+                    </div>
+                    {backdated && (
+                        <output className="block text-right text-[11px] font-medium text-warning">
+                            {t("pos.pay.backdated_warning")}
+                        </output>
+                    )}
+                </div>
                 <div
                     id="pos-pay-summary"
                     className="space-y-2 text-xs"
                     aria-live="polite"
                 >
-                    {backdated && (
-                        <div className="flex justify-between font-semibold text-warning">
-                            <span>{t("pos.pay.sale_date")}</span>
-                            <span className="num">{d.n(saleDay)}</span>
-                        </div>
-                    )}
                     <div className="flex justify-between text-muted-foreground">
                         <span>{t("pos.pay.payable")}</span>
                         <span className="num text-sm font-bold text-foreground">
@@ -747,7 +751,7 @@ function PaymentBody({
 
                 <button
                     type="submit"
-                    className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-md transition-colors hover:bg-primary-hover disabled:opacity-40"
+                    className="mt-auto flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-md transition-colors hover:bg-primary-hover disabled:opacity-40"
                     disabled={busy || blocking.length > 0 || missingCourier}
                 >
                     {busy
